@@ -1,0 +1,228 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { Award, CalendarDays, Clock, Layers, UserRound } from "lucide-react";
+import { getAllSlugs, getRelated, getWebinar } from "@/lib/data/catalog";
+import { WebinarCard } from "@/components/webinar-card";
+import { AddToCart } from "@/components/add-to-cart";
+import { WebinarVideo } from "@/components/webinar-video";
+import { SectionHeading } from "@/components/ui";
+import { formatEventDate } from "@/lib/utils";
+
+export async function generateStaticParams() {
+  return (await getAllSlugs()).map((slug) => ({ slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const webinar = await getWebinar(slug);
+  if (!webinar) return { title: "Webinar not found" };
+  return {
+    title: webinar.title,
+    description: webinar.description[0]?.slice(0, 160),
+  };
+}
+
+export default async function WebinarDetailPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const webinar = await getWebinar(slug);
+  if (!webinar) notFound();
+
+  const related = await getRelated(slug, 3);
+  // Only advertise the player when there's something behind it; the API still
+  // re-checks entitlement before handing out a URL.
+  const hasRecording = Boolean(webinar.videoPath || webinar.videoUrl);
+  const credits = [
+    webinar.cpeCredit && { label: "Recommended CPE credit", value: `${webinar.cpeCredit}` },
+    webinar.fieldOfStudy && { label: "Field of study", value: webinar.fieldOfStudy },
+    { label: "Prerequisites", value: webinar.prerequisites },
+    webinar.learningLevel && { label: "Learning level", value: webinar.learningLevel },
+    { label: "Location", value: "Virtual / Online" },
+    { label: "Delivery method", value: webinar.deliveryMethod },
+    { label: "Session duration", value: `${webinar.durationMins} Minutes` },
+  ].filter(Boolean) as { label: string; value: string }[];
+
+  return (
+    <>
+      {/* ------------------------------------------------------------- banner */}
+      <section className="border-b border-cream-dark bg-cream">
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+          <nav aria-label="Breadcrumb" className="mb-6 flex flex-wrap gap-2 text-sm">
+            <Link
+              href="/"
+              className="font-medium text-ink-muted transition-colors duration-200 hover:text-brand-700"
+            >
+              Home
+            </Link>
+            <span className="text-slate-400">/</span>
+            <Link
+              href={
+                webinar.kind === "upcoming"
+                  ? "/webinar/upcoming"
+                  : "/webinar/pre-recorded"
+              }
+              className="font-medium text-ink-muted transition-colors duration-200 hover:text-brand-700"
+            >
+              {webinar.kind === "upcoming" ? "Upcoming Webinar" : "Pre Recorded Webinar"}
+            </Link>
+          </nav>
+
+          <h1 className="max-w-4xl text-3xl font-extrabold leading-tight tracking-tight text-navy-950 sm:text-4xl lg:text-[2.75rem]">
+            {webinar.title}
+          </h1>
+
+          <dl className="mt-8 flex flex-wrap gap-x-8 gap-y-4">
+            <Meta icon={UserRound} label="Presenter" value={webinar.presenter} />
+            <Meta
+              icon={CalendarDays}
+              label="Event date"
+              value={formatEventDate(webinar.eventAt)}
+            />
+            <Meta
+              icon={Clock}
+              label="Duration"
+              value={`${webinar.durationMins} Minutes`}
+            />
+            {webinar.cpeCredit && (
+              <Meta
+                icon={Award}
+                label="CPE credit"
+                value={`${webinar.cpeCredit} ${webinar.fieldOfStudy ?? ""}`.trim()}
+              />
+            )}
+            {webinar.productCode && (
+              <Meta icon={Layers} label="Product code" value={webinar.productCode} />
+            )}
+          </dl>
+        </div>
+      </section>
+
+      {/* -------------------------------------------------------------- body */}
+      <section className="bg-white">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_400px] lg:px-8">
+          <div>
+            {hasRecording && (
+              <div className="mb-10">
+                <h2 className="mb-4 text-xl font-extrabold text-navy-950">
+                  Recording
+                </h2>
+                <WebinarVideo slug={webinar.slug} />
+              </div>
+            )}
+
+            {webinar.description.map((paragraph, i) => (
+              <p
+                key={i}
+                className="mb-5 text-[16.5px] leading-[1.8] text-ink-muted"
+              >
+                {paragraph}
+              </p>
+            ))}
+
+            {webinar.learningObjectives.length > 0 && (
+              <BulletSection
+                title="Learning Objectives"
+                items={webinar.learningObjectives}
+              />
+            )}
+            {webinar.topicsCovered.length > 0 && (
+              <BulletSection title="Topics Covered" items={webinar.topicsCovered} />
+            )}
+            {webinar.whoShouldAttend.length > 0 && (
+              <BulletSection
+                title="Who Should Attend"
+                items={webinar.whoShouldAttend}
+              />
+            )}
+
+            <h2 className="mb-5 mt-12 text-2xl font-extrabold text-navy-950">
+              Credits and Other Information
+            </h2>
+            <dl className="grid gap-x-8 gap-y-4 rounded-2xl bg-cream p-6 sm:grid-cols-2">
+              {credits.map((c) => (
+                <div key={c.label} className="flex flex-col">
+                  <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    {c.label}
+                  </dt>
+                  <dd className="mt-1 text-[15px] font-semibold text-navy-950">
+                    {c.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-4 text-[15px] text-ink-muted">
+              Includes case studies and a live Q&amp;A session with the speaker.
+            </p>
+          </div>
+
+          <aside className="lg:sticky lg:top-28 lg:self-start">
+            <AddToCart webinar={webinar} />
+          </aside>
+        </div>
+      </section>
+
+      {/* ----------------------------------------------------------- related */}
+      {related.length > 0 && (
+        <section className="border-t border-slate-200 bg-cream">
+          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+            <SectionHeading lead="You may also" accent="be interested in" />
+            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {related.map((item, i) => (
+                <WebinarCard key={item.slug} webinar={item} position={i} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+    </>
+  );
+}
+
+function Meta({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <Icon className="size-5 shrink-0 text-brand-600" aria-hidden />
+      <div>
+        <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          {label}
+        </dt>
+        <dd className="text-[15px] font-semibold text-navy-950">{value}</dd>
+      </div>
+    </div>
+  );
+}
+
+function BulletSection({ title, items }: { title: string; items: string[] }) {
+  return (
+    <>
+      <h2 className="mb-5 mt-12 text-2xl font-extrabold text-navy-950">{title}</h2>
+      <ul className="space-y-3">
+        {items.map((item) => (
+          <li key={item} className="flex gap-3">
+            <span
+              aria-hidden
+              className="mt-2 size-1.5 shrink-0 rounded-full bg-brand-500"
+            />
+            <span className="text-[16px] leading-[1.7] text-ink-muted">{item}</span>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}

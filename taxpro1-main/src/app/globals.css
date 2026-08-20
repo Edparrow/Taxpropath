@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand — sampled from the Taxpropath logo (green → blue gradient) */
+  --color-brand-50: #f0fdf4;
+  --color-brand-100: #dcfce7;
+  --color-brand-200: #bbf7d0;
+  --color-brand-300: #86efac;
+  --color-brand-400: #4ade80;
+  --color-brand-500: #22c55e;
+  --color-brand-600: #16a34a;
+  --color-brand-700: #15803d;
+  --color-brand-800: #166534;
+  --color-brand-900: #14532d;
+
+  --color-navy-50: #eff6ff;
+  --color-navy-100: #dbeafe;
+  --color-navy-200: #bfdbfe;
+  --color-navy-300: #93c5fd;
+  --color-navy-400: #3b82f6;
+  --color-navy-500: #0066cc;
+  --color-navy-600: #0055aa;
+  --color-navy-700: #1e3a8a;
+  --color-navy-800: #172554;
+  --color-navy-900: #0f172a;
+  --color-navy-950: #020617;
+
+  /* Canvas — warm cream from the reference art direction */
+  --color-cream: #f7f4ee;
+  --color-cream-dark: #ece7dc;
+
+  --color-ink: #0f172a;
+  --color-ink-muted: #475569;
+
+  --font-sans: var(--font-montserrat), system-ui, sans-serif;
+  --font-display: var(--font-montserrat), system-ui, sans-serif;
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #0f172a;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Gradient wordmark treatment matching the logo lockup */
+.text-brand-gradient {
+  background: linear-gradient(100deg, #16a34a 0%, #22c55e 35%, #0066cc 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bg-brand-gradient {
+  background: linear-gradient(100deg, #16a34a 0%, #0066cc 100%);
+}
+
+/* Underlined-italic accent used for the second line of section headings */
+.heading-accent {
+  font-style: italic;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

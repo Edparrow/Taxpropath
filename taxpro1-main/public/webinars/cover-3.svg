@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="1200" height="750" role="img" aria-label="Learning path to certification">
+  <defs>
+    <linearGradient id="bg3" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#16a34a"/>
+      <stop offset="1" stop-color="#0066cc"/>
+    </linearGradient>
+    <linearGradient id="step" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#22c55e"/>
+      <stop offset="1" stop-color="#4ade80"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="750" fill="url(#bg3)"/>
+  <circle cx="220" cy="170" r="250" fill="#ffffff" opacity="0.07"/>
+  <circle cx="1000" cy="580" r="260" fill="#ffffff" opacity="0.05"/>
+
+  <!-- ascending steps -->
+  <g fill="url(#step)" opacity="0.95">
+    <rect x="150" y="600" width="180" height="150"/>
+    <rect x="330" y="510" width="180" height="240"/>
+    <rect x="510" y="420" width="180" height="330"/>
+    <rect x="690" y="330" width="180" height="420"/>
+    <rect x="870" y="240" width="180" height="510"/>
+  </g>
+  <g fill="#ffffff" opacity="0.16">
+    <rect x="150" y="600" width="180" height="10"/>
+    <rect x="330" y="510" width="180" height="10"/>
+    <rect x="510" y="420" width="180" height="10"/>
+    <rect x="690" y="330" width="180" height="10"/>
+    <rect x="870" y="240" width="180" height="10"/>
+  </g>
+
+  <!-- the path ribbon -->
+  <path d="M170 690q180 -30 250 -140 t250 -130 t300 -160" stroke="#ffffff" stroke-width="26" fill="none" opacity="0.9" stroke-linecap="round"/>
+
+  <!-- milestone cards along the path -->
+  <g>
+    <rect x="352" y="392" width="76" height="76" rx="16" fill="#ffffff"/>
+    <path d="M370 414h18v32h-18zm22 0h18v32h-18z" fill="#16a34a"/>
+  </g>
+  <g>
+    <rect x="558" y="270" width="76" height="76" rx="16" fill="#ffffff"/>
+    <circle cx="586" cy="298" r="10" fill="#0066cc"/>
+    <circle cx="608" cy="298" r="10" fill="#22c55e"/>
+    <path d="M568 328a20 20 0 0 1 36 0zm34-4a18 18 0 0 1 26 4z" fill="#0066cc"/>
+  </g>
+  <g>
+    <rect x="742" y="150" width="76" height="76" rx="16" fill="#ffffff"/>
+    <g stroke="#16a34a" stroke-width="6" stroke-linecap="round" fill="none">
+      <path d="M760 174l8 8 14-14"/>
+      <path d="M760 194l8 8 14-14"/>
+      <path d="M792 178h12M792 198h12"/>
+    </g>
+  </g>
+
+  <!-- climbers -->
+  <g>
+    <circle cx="250" cy="606" r="26" fill="#0f172a"/>
+    <path d="M212 700v-52a38 38 0 0 1 76 0v52z" fill="#1e3a8a"/>
+  </g>
+  <g>
+    <circle cx="612" cy="426" r="24" fill="#0f172a"/>
+    <path d="M578 512v-48a34 34 0 0 1 68 0v48z" fill="#0f172a" opacity="0.85"/>
+  </g>
+
+  <!-- trophy on the summit -->
+  <g>
+    <rect x="930" y="196" width="60" height="12" rx="6" fill="#ffffff"/>
+    <rect x="948" y="164" width="24" height="34" fill="#ffffff"/>
+    <path d="M918 92h84v34a42 42 0 0 1-84 0z" fill="#ffffff"/>
+    <path d="M918 100h-20a24 24 0 0 0 24 24zm84 0h20a24 24 0 0 1-24 24z" fill="#ffffff" opacity="0.85"/>
+    <circle cx="960" cy="60" r="10" fill="#ffffff" opacity="0.6"/>
+  </g>
+</svg>

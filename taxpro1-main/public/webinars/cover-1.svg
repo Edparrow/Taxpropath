@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="1200" height="750" role="img" aria-label="Live webinar presentation">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#16a34a"/>
+      <stop offset="1" stop-color="#0066cc"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#22c55e"/>
+      <stop offset="1" stop-color="#16a34a"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="750" fill="url(#bg)"/>
+  <circle cx="230" cy="150" r="260" fill="#ffffff" opacity="0.07"/>
+  <circle cx="1010" cy="560" r="300" fill="#ffffff" opacity="0.06"/>
+
+  <!-- monitor -->
+  <rect x="300" y="120" width="600" height="372" rx="20" fill="#020617" opacity="0.28"/>
+  <rect x="312" y="132" width="576" height="348" rx="14" fill="#ffffff"/>
+  <rect x="560" y="492" width="80" height="34" fill="#020617" opacity="0.35"/>
+  <rect x="500" y="520" width="200" height="16" rx="8" fill="#020617" opacity="0.35"/>
+
+  <!-- presenter inside the screen -->
+  <circle cx="430" cy="228" r="34" fill="#0f172a"/>
+  <path d="M372 420v-88a58 58 0 0 1 116 0v88z" fill="#1e3a8a"/>
+  <path d="M430 274l24 34-24 26-24-26z" fill="#22c55e"/>
+
+  <!-- slide content -->
+  <rect x="540" y="196" width="200" height="16" rx="8" fill="#0f172a" opacity="0.75"/>
+  <rect x="540" y="230" width="150" height="12" rx="6" fill="#94a3b8"/>
+  <rect x="540" y="258" width="176" height="12" rx="6" fill="#94a3b8"/>
+  <g fill="url(#bar)">
+    <rect x="540" y="372" width="42" height="48" rx="6"/>
+    <rect x="600" y="344" width="42" height="76" rx="6"/>
+    <rect x="660" y="308" width="42" height="112" rx="6"/>
+    <rect x="720" y="268" width="42" height="152" rx="6"/>
+  </g>
+  <path d="M540 356l60-24 60-34 62-40" stroke="#0066cc" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <path d="M700 258h30v30" stroke="#0066cc" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- audience -->
+  <g>
+    <circle cx="180" cy="600" r="36" fill="#0f172a" opacity="0.9"/>
+    <path d="M120 750v-56a60 60 0 0 1 120 0v56z" fill="#1e3a8a"/>
+  </g>
+  <g>
+    <circle cx="400" cy="628" r="40" fill="#0f172a" opacity="0.9"/>
+    <path d="M334 750v-52a66 66 0 0 1 132 0v52z" fill="#16a34a"/>
+  </g>
+  <g>
+    <circle cx="640" cy="642" r="40" fill="#0f172a" opacity="0.9"/>
+    <path d="M574 750v-46a66 66 0 0 1 132 0v46z" fill="#1e3a8a"/>
+  </g>
+  <g>
+    <circle cx="880" cy="622" r="38" fill="#0f172a" opacity="0.9"/>
+    <path d="M818 750v-54a62 62 0 0 1 124 0v54z" fill="#22c55e" opacity="0.9"/>
+  </g>
+</svg>
