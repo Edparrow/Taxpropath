@@ -1,8 +1,11 @@
 import Link from "next/link";
 import {
   Award,
+  Briefcase,
   Building2,
   Check,
+  Mic2,
+  Tag,
   Users,
   X,
 } from "lucide-react";
@@ -15,6 +18,9 @@ import {
 } from "@/lib/data/site-content";
 import { WebinarCard } from "@/components/webinar-card";
 import { IndustryIcon } from "@/components/industry-icon";
+import { Reveal } from "@/components/reveal";
+import { TypingRevealCards } from "@/components/typing-reveal-cards";
+import { SpeakerCarousel } from "@/components/speaker-carousel";
 import { Badge, PillLink, SectionHeading } from "@/components/ui";
 
 /*
@@ -30,35 +36,20 @@ const FALLBACK_INDUSTRIES = [
 
 const PLANS = [
   {
-    name: "Single Session",
-    tagline: "Learn Smarter. Achieve Faster.",
-    price: "$169",
-    unit: "/ webinar",
-    features: [
-      { label: "Attend one LIVE session", included: true },
-      { label: "Real-time Q&A with the instructor", included: true },
-      { label: "Certificate of completion", included: true },
-      { label: "On-demand replay access", included: false },
-      { label: "Downloadable e-Transcript", included: false },
-    ],
-    cta: "Browse Webinars",
-    href: "/webinar/upcoming",
-    featured: false,
-  },
-  {
     name: "Annual Unlimited",
     tagline: "Education That Fits Your Life",
     price: "$199",
     unit: "/ year",
     features: [
+      { label: "Webinar as per your requirements", included: true },
       { label: "5000+ hours of approved CPE courses", included: true },
       { label: "Unlimited LIVE & on-demand webinars", included: true },
       { label: "Automated CPE/CE credit tracking", included: true },
       { label: "Downloadable e-Transcripts", included: true },
       { label: "One-on-one mentorship", included: false },
     ],
-    cta: "Get Unlimited",
-    href: "/register",
+    cta: "Contact Us",
+    href: "/contact",
     featured: true,
   },
   {
@@ -73,7 +64,7 @@ const PLANS = [
       { label: "Dedicated account manager", included: true },
       { label: "Private, org-specific sessions", included: true },
     ],
-    cta: "Contact Sales",
+    cta: "Contact Us",
     href: "/contact",
     featured: false,
   },
@@ -121,14 +112,18 @@ export default async function HomePage() {
       {/* ---------------------------------------------------------- industries */}
       <section className="border-y border-slate-200 bg-white">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-          <h2 className="text-center text-sm font-bold uppercase tracking-[0.2em] text-slate-400">
-            Industries We Cover
-          </h2>
+          <Reveal className="flex justify-center">
+            <Badge>
+              <Briefcase className="size-3.5" aria-hidden />
+              Industries We Cover
+            </Badge>
+          </Reveal>
           <ul className="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {industries.map((industry) => (
-              <li
-                key={industry.id}
-                className="flex flex-col items-center gap-4 rounded-2xl border border-slate-200 p-8 text-center transition-colors duration-300 hover:border-brand-300 hover:bg-brand-50/40"
+            {industries.map((industry, i) => (
+              <li key={industry.id}>
+              <Reveal
+                delay={1500 + i * 200}
+                className="flex h-full flex-col items-center gap-4 rounded-2xl border border-slate-200 p-8 text-center transition-colors duration-300 hover:border-brand-300 hover:bg-brand-50/40"
               >
                 <span className="flex size-14 items-center justify-center rounded-2xl bg-brand-gradient text-white">
                   <IndustryIcon name={industry.icon} className="size-7" />
@@ -139,6 +134,7 @@ export default async function HomePage() {
                     {industry.description}
                   </p>
                 )}
+              </Reveal>
               </li>
             ))}
           </ul>
@@ -218,18 +214,23 @@ export default async function HomePage() {
 
       {/* --------------------------------------------------------- about strip */}
       <section className="bg-cream">
-        <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 pt-8 text-center sm:px-6 lg:px-8">
+          <Badge className="px-5 py-2 text-sm">
+            <Building2 className="size-4" aria-hidden />
+            About Taxpropath
+          </Badge>
+        </div>
+        <Reveal
+          direction="left"
+          className="mx-auto grid max-w-7xl items-center gap-12 px-4 pb-20 pt-8 sm:px-6 lg:grid-cols-2 lg:px-8"
+        >
           <div>
-            <Badge>
-              <Building2 className="size-3.5" aria-hidden />
-              About Taxpropath
-            </Badge>
             <SectionHeading
               lead="Expertly crafted,"
               accent="high-quality online courses"
-              className="mt-6"
+              className="mt-6 text-3xl sm:text-4xl"
             />
-            <p className="mt-6 text-[17px] leading-[1.75] text-ink-muted">
+            <p className="mt-6 font-poppins text-[17px] leading-[1.75] text-ink-muted">
               Taxpropath was founded with a twofold mission: to elevate professional
               education beyond standard CPE credits and to bridge the disconnect
               between content creators and learners. Our web-based video platform is
@@ -245,8 +246,11 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <ul className="grid gap-4 sm:grid-cols-2">
-            {[
+          <TypingRevealCards
+            className="grid gap-4 sm:grid-cols-2"
+            cardClassName="rounded-2xl border border-navy-950/[0.07] bg-white p-6"
+            speed={24}
+            items={[
               {
                 title: "Flexible Access",
                 body: "Earn credits anytime via our mobile app and seamlessly integrated web platform.",
@@ -263,35 +267,23 @@ export default async function HomePage() {
                 title: "Professional Focus",
                 body: "Intelligently designed to fit the unique needs of busy, modern professionals.",
               },
-            ].map((item) => (
-              <li
-                key={item.title}
-                className="rounded-2xl border border-navy-950/[0.07] bg-white p-6"
-              >
-                <h3 className="text-base font-bold text-navy-950">{item.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-                  {item.body}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </div>
+            ]}
+          />
+        </Reveal>
       </section>
 
       {/* ------------------------------------------------------------- pricing */}
       <section className="bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="grid gap-12 lg:grid-cols-[1fr_2fr] lg:items-start">
-            <div className="lg:sticky lg:top-28">
-              <SectionHeading lead="World-Class Learning," accent="At Your Fingertips" />
-              <p className="mt-6 text-[16.5px] leading-relaxed text-ink-muted">
-                Buy a single session, or unlock the entire library for a year. Every
-                plan includes approved CPE/CE credit and automated tracking.
-              </p>
-            </div>
+        <div className="mx-auto max-w-7xl px-4 pb-20 pt-6 sm:px-6 lg:px-8">
+          <div className="flex justify-center">
+            <Badge>
+              <Tag className="size-3.5" aria-hidden />
+              Explore our plans
+            </Badge>
+          </div>
 
-            <div className="grid gap-6 sm:grid-cols-3">
-              {PLANS.map((plan) => (
+          <div className="mx-auto mt-20 grid max-w-3xl gap-6 sm:grid-cols-2">
+            {PLANS.map((plan) => (
                 <div
                   key={plan.name}
                   className={
@@ -371,7 +363,50 @@ export default async function HomePage() {
                   </div>
                 </div>
               ))}
-            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --------------------------------------------------------- speakers */}
+      <section className="bg-cream">
+        <div className="mx-auto max-w-7xl px-4 pb-20 pt-8 sm:px-6 lg:px-8">
+          <div className="flex justify-center">
+            <Badge>
+              <Mic2 className="size-3.5" aria-hidden />
+              Our Speakers
+            </Badge>
+          </div>
+
+          <div className="mt-12">
+            <SpeakerCarousel
+              speakers={[
+                {
+                  name: "Michael Turner",
+                  title: "Senior Tax Advisor, CPA",
+                  bio: "20+ years advising Fortune 500 companies on federal tax strategy.",
+                },
+                {
+                  name: "Sarah Chen",
+                  title: "Compliance & Audit Specialist",
+                  bio: "Former Big 4 auditor specializing in CPE-accredited compliance training.",
+                },
+                {
+                  name: "James Okafor",
+                  title: "HR & Payroll Consultant",
+                  bio: "Helps finance teams navigate payroll tax law changes nationwide.",
+                },
+                {
+                  name: "Elena Marquez",
+                  title: "QuickBooks & Xero Advisor",
+                  bio: "Trains bookkeeping teams on cloud-accounting best practices.",
+                },
+                {
+                  name: "David Whitfield",
+                  title: "Enrolled Agent, IRS Rep.",
+                  bio: "Represents clients before the IRS and teaches audit-defense webinars.",
+                },
+              ]}
+            />
           </div>
         </div>
       </section>
@@ -488,7 +523,7 @@ export default async function HomePage() {
               accent="Starting Today"
               className="!text-white [&_span]:decoration-white/70"
             />
-            <p className="mx-auto mt-5 max-w-xl text-[16.5px] leading-relaxed text-white/90">
+            <p className="mx-auto mt-5 max-w-xl font-poppins text-[16.5px] leading-relaxed text-white/90">
               Join thousands of CPAs, EAs, and finance professionals earning their
               credits with Taxpropath.
             </p>

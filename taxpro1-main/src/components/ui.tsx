@@ -58,7 +58,7 @@ export function SectionHeading({
   return (
     <Tag
       className={cn(
-        "font-extrabold leading-[1.15] tracking-tight text-navy-950",
+        "font-display font-extrabold leading-[1.15] tracking-tight text-navy-950",
         Tag === "h1"
           ? "text-4xl sm:text-5xl lg:text-[3.5rem]"
           : "text-3xl sm:text-4xl",
@@ -101,7 +101,7 @@ export function PageBanner({
   return (
     <section className="border-b border-cream-dark bg-cream">
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
-        <h1 className="text-4xl font-extrabold tracking-tight text-navy-950 sm:text-5xl">
+        <h1 className="font-display text-4xl font-extrabold tracking-tight text-navy-950 sm:text-5xl">
           {title}
         </h1>
         <nav aria-label="Breadcrumb" className="mt-4 flex flex-wrap items-center gap-2 text-sm">
