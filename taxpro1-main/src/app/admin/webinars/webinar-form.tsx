@@ -31,9 +31,13 @@ export type WebinarFormValues = {
   videoPath: string | null;
   videoUrl: string;
   options: { label: string; description: string; price: string }[];
+  seoTitle: string;
+  seoDescription: string;
+  faq: { question: string; answer: string }[];
 };
 
 const DEFAULT_OPTION = { label: "", description: "", price: "" };
+const DEFAULT_FAQ = { question: "", answer: "" };
 
 export function WebinarForm({ initial }: { initial: WebinarFormValues }) {
   const action = saveWebinar.bind(null, initial.id);
@@ -41,6 +45,7 @@ export function WebinarForm({ initial }: { initial: WebinarFormValues }) {
   const [options, setOptions] = useState(
     initial.options.length ? initial.options : [DEFAULT_OPTION],
   );
+  const [faqItems, setFaqItems] = useState(initial.faq);
 
   return (
     <form action={formAction} className="max-w-4xl">
@@ -256,6 +261,75 @@ export function WebinarForm({ initial }: { initial: WebinarFormValues }) {
           <Plus className="size-4" aria-hidden />
           Add option
         </button>
+      </Card>
+
+      <Card title="FAQ">
+        <p className="mb-4 text-[13.5px] text-ink-muted">
+          Shown as an accordion on the webinar page.
+        </p>
+        <div className="space-y-3">
+          {faqItems.map((item, i) => (
+            <div
+              key={i}
+              className="grid gap-3 rounded-xl border border-slate-200 p-4 sm:grid-cols-[1fr_1.5fr_auto]"
+            >
+              <input
+                name="faq_question"
+                defaultValue={item.question}
+                placeholder="Question"
+                aria-label={`FAQ ${i + 1} question`}
+                className={INPUT}
+              />
+              <input
+                name="faq_answer"
+                defaultValue={item.answer}
+                placeholder="Answer"
+                aria-label={`FAQ ${i + 1} answer`}
+                className={INPUT}
+              />
+              <button
+                type="button"
+                onClick={() => setFaqItems(faqItems.filter((_, idx) => idx !== i))}
+                aria-label={`Remove FAQ ${i + 1}`}
+                className="flex cursor-pointer items-center justify-center rounded-lg border border-slate-300 px-3 text-red-700 transition-colors duration-200 hover:border-red-300 hover:bg-red-50"
+              >
+                <Trash2 className="size-4" aria-hidden />
+              </button>
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => setFaqItems([...faqItems, DEFAULT_FAQ])}
+          className="mt-4 flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-[14px] font-semibold text-navy-950 transition-colors duration-200 hover:bg-slate-50"
+        >
+          <Plus className="size-4" aria-hidden />
+          Add FAQ
+        </button>
+      </Card>
+
+      <Card title="SEO">
+        <Grid>
+          <Field
+            label="SEO title"
+            hint="Leave blank to use the webinar title."
+            className="sm:col-span-2"
+          >
+            <input name="seo_title" defaultValue={initial.seoTitle} className={INPUT} />
+          </Field>
+          <Field
+            label="SEO description"
+            hint="Leave blank to use the first paragraph of the description."
+            className="sm:col-span-2"
+          >
+            <textarea
+              name="seo_description"
+              defaultValue={initial.seoDescription}
+              rows={3}
+              className={INPUT}
+            />
+          </Field>
+        </Grid>
       </Card>
 
       <div className="sticky bottom-0 mt-8 flex items-center gap-3 border-t border-slate-200 bg-slate-50/95 py-4 backdrop-blur">

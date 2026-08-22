@@ -38,6 +38,14 @@ function optionalText(value: FormDataEntryValue | null): string | null {
   return raw || null;
 }
 
+function readFaq(formData: FormData): { question: string; answer: string }[] {
+  const questions = formData.getAll("faq_question").map(String);
+  const answers = formData.getAll("faq_answer").map(String);
+  return questions
+    .map((question, i) => ({ question: question.trim(), answer: (answers[i] ?? "").trim() }))
+    .filter((item) => item.question && item.answer);
+}
+
 async function resolvePresenter(
   supabase: Awaited<ReturnType<typeof createClient>>,
   name: string,
@@ -114,6 +122,9 @@ export async function saveWebinar(
     video_path: videoPath,
     video_url: videoUrl,
     video_status: videoPath || videoUrl ? "ready" : "none",
+    seo_title: optionalText(formData.get("seo_title")),
+    seo_description: optionalText(formData.get("seo_description")),
+    faq: readFaq(formData),
   };
 
   let id = webinarId;
@@ -168,6 +179,63 @@ export async function saveWebinar(
   revalidatePath(`/webinar/${slug}`);
   revalidatePath("/");
   redirect("/admin/webinars");
+}
+
+/** Duplicates a webinar (and its pricing options) under a new slug, mirroring the reference panel's "Clone" action. */
+export async function cloneWebinar(formData: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+
+  const { data: source, error: fetchError } = await supabase
+    .from("webinars")
+    .select("*, pricing_options(label, description, price_cents, sort_order)")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (fetchError || !source) {
+    console.error("[admin] clone webinar fetch failed", fetchError);
+    return;
+  }
+
+  const { id: _id, slug, pricing_options, created_at: _createdAt, ...rest } =
+    source as Record<string, unknown> & { pricing_options: unknown[] };
+
+  // Find a free "<slug>-copy", "<slug>-copy-2", ... slug.
+  let newSlug = `${slug}-copy`;
+  for (let i = 2; ; i++) {
+    const { data: clash } = await supabase
+      .from("webinars")
+      .select("id")
+      .eq("slug", newSlug)
+      .maybeSingle();
+    if (!clash) break;
+    newSlug = `${slug}-copy-${i}`;
+  }
+
+  const { data: created, error: insertError } = await supabase
+    .from("webinars")
+    .insert({ ...rest, slug: newSlug, title: `${rest.title} (Copy)`, is_published: false })
+    .select("id")
+    .single();
+
+  if (insertError || !created) {
+    console.error("[admin] clone webinar insert failed", insertError);
+    return;
+  }
+
+  const options = (pricing_options as { label: string; description: string | null; price_cents: number; sort_order: number }[]).map(
+    (o) => ({ ...o, webinar_id: created.id }),
+  );
+  if (options.length) {
+    const { error } = await supabase.from("pricing_options").insert(options);
+    if (error) console.error("[admin] clone webinar pricing insert failed", error);
+  }
+
+  revalidatePath("/admin/webinars");
+  redirect(`/admin/webinars/${created.id}`);
 }
 
 export async function deleteWebinar(formData: FormData) {

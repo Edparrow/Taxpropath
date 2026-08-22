@@ -21,13 +21,39 @@ const poppins = Poppins({
   display: "swap",
 });
 
+const SITE_URL = "https://taxpropath.com";
+const SITE_TITLE = "Taxpropath — Accounting & Tax Webinars";
+const SITE_DESCRIPTION =
+  "5000+ hours of approved CPE courses for Accounting, Tax, Finance, and HR professionals. Unlimited learning with an annual subscription for just $199.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Taxpropath — Accounting & Tax Webinars",
+    default: SITE_TITLE,
     template: "%s | Taxpropath",
   },
-  description:
-    "5000+ hours of approved CPE courses for Accounting, Tax, Finance, and HR professionals. Unlimited learning with an annual subscription for just $199.",
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    siteName: "Taxpropath",
+    type: "website",
+    images: [
+      {
+        url: "/herosection/slider_1__.webp",
+        width: 1672,
+        height: 941,
+        alt: "Taxpropath — Accounting & Tax Webinars",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: ["/herosection/slider_1__.webp"],
+  },
 };
 
 export default function RootLayout({

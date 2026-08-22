@@ -21,6 +21,7 @@ const NAV = [
       { href: "/webinar/pre-recorded", label: "Pre Recorded Webinar" },
     ],
   },
+  { href: "/blog", label: "Blog" },
   { href: "/contact", label: "Contact" },
 ];
 

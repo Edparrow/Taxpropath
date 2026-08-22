@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Mail, MapPin } from "lucide-react";
+import { NewsletterForm } from "@/components/newsletter-form";
 
 const INDUSTRIES = [
   "Banking & Taxation",
@@ -12,6 +13,8 @@ const INDUSTRIES = [
 const USEFUL_LINKS = [
   { href: "/webinar/upcoming", label: "Upcoming Webinar" },
   { href: "/webinar/pre-recorded", label: "Pre Recorded Webinar" },
+  { href: "/blog", label: "Blog" },
+  { href: "/gallery", label: "Gallery" },
   { href: "/privacy-policy", label: "Privacy Policy" },
   { href: "/refund-policy", label: "Refund Policy" },
   { href: "/contact", label: "Contact Us" },
@@ -44,6 +47,7 @@ export function SiteFooter() {
             For almost a decade, we&rsquo;ve been providing high-quality online courses
             led by expert instructors with deep industry experience.
           </p>
+          <NewsletterForm />
         </div>
 
         <div>

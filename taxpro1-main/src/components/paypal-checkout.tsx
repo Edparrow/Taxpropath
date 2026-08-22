@@ -64,11 +64,14 @@ const INCOMPLETE_FORM =
 export function PaypalCheckout({
   clientId,
   lines,
+  couponCode,
   getBilling,
   onPaid,
 }: {
   clientId: string;
   lines: CartLine[];
+  /** Applied coupon code, if any — sent alongside the cart so the server can re-validate it. */
+  couponCode?: string;
   /** Returns the billing form values, or null if the form is invalid. */
   getBilling: () => Record<string, string> | null;
   onPaid: (result: { orderId: string; captureId: string | null }) => void;
@@ -81,9 +84,9 @@ export function PaypalCheckout({
 
   // Latest values, so the SDK callbacks never close over stale props. The SDK
   // mounts once and keeps its original callbacks, so they read through this ref.
-  const latest = useRef({ lines, getBilling, onPaid });
+  const latest = useRef({ lines, couponCode, getBilling, onPaid });
   useEffect(() => {
-    latest.current = { lines, getBilling, onPaid };
+    latest.current = { lines, couponCode, getBilling, onPaid };
   });
 
   const cardFieldsRef = useRef<ReturnType<PaypalNamespace["CardFields"]> | null>(null);
@@ -98,7 +101,11 @@ export function PaypalCheckout({
       const res = await fetch("/api/paypal/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ billing, lines: latest.current.lines }),
+        body: JSON.stringify({
+          billing,
+          lines: latest.current.lines,
+          couponCode: latest.current.couponCode || undefined,
+        }),
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Could not start payment.");

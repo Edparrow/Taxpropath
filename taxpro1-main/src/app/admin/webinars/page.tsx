@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Pencil, Plus, Video } from "lucide-react";
+import { Copy, Pencil, Plus, Video } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { formatEventDate, formatPrice } from "@/lib/utils";
 import { DeleteWebinarButton } from "./delete-button";
+import { cloneWebinar } from "./actions";
 
 export const metadata = { title: "Webinars" };
 
@@ -130,6 +131,17 @@ export default async function AdminWebinarsPage() {
                           <Pencil className="size-3.5" aria-hidden />
                           Edit
                         </Link>
+                        <form action={cloneWebinar}>
+                          <input type="hidden" name="id" value={w.id} />
+                          <button
+                            type="submit"
+                            aria-label={`Clone ${w.title}`}
+                            className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] font-semibold text-navy-950 transition-colors duration-200 hover:bg-slate-50"
+                          >
+                            <Copy className="size-3.5" aria-hidden />
+                            Clone
+                          </button>
+                        </form>
                         <DeleteWebinarButton id={w.id} title={w.title} />
                       </div>
                     </td>

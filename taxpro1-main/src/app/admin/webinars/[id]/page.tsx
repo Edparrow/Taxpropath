@@ -29,6 +29,9 @@ type Row = {
   is_published: boolean;
   video_path: string | null;
   video_url: string | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  faq?: { question: string; answer: string }[] | null;
   presenters: { name: string } | null;
   pricing_options: {
     label: string;
@@ -58,7 +61,7 @@ export default async function EditWebinarPage({
       `id, slug, title, kind, event_at, duration_mins, product_code, description,
        learning_objectives, topics_covered, who_should_attend, cpe_credit,
        field_of_study, prerequisites, learning_level, delivery_method, industry,
-       is_featured, is_published, video_path, video_url,
+       is_featured, is_published, video_path, video_url, seo_title, seo_description, faq,
        presenters ( name ),
        pricing_options ( label, description, price_cents, sort_order )`,
     )
@@ -91,6 +94,9 @@ export default async function EditWebinarPage({
     isPublished: row.is_published,
     videoPath: row.video_path,
     videoUrl: row.video_url ?? "",
+    seoTitle: row.seo_title ?? "",
+    seoDescription: row.seo_description ?? "",
+    faq: row.faq ?? [],
     options: [...row.pricing_options]
       .sort((a, b) => a.sort_order - b.sort_order)
       .map((o) => ({

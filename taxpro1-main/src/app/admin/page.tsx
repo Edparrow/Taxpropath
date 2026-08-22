@@ -1,14 +1,19 @@
 import Link from "next/link";
 import {
+  BookOpen,
   Building2,
   FolderTree,
   Image as ImageIcon,
+  Images,
   Info,
   Layers,
+  Mail,
   MessageSquareQuote,
+  MessagesSquare,
   Plus,
   ShoppingBag,
   Tags,
+  Ticket,
   Users,
   Video,
 } from "lucide-react";
@@ -30,27 +35,33 @@ const RESOURCE_ICONS: Record<string, Icon> = {
   testimonials: MessageSquareQuote,
   industries: Building2,
   brands: Tags,
+  blog: BookOpen,
+  gallery: Images,
 };
 
 export default async function AdminDashboard() {
   await requireAdmin();
   const supabase = await createClient();
 
-  const [webinars, orders, ...contentCounts] = await Promise.all([
-    supabase.from("webinars").select("id, is_published, video_path, video_url"),
-    supabase.from("orders").select("status, subtotal_cents"),
-    /*
-     * head+exact gives a count without transferring rows. A missing table (the
-     * 0006 migration not yet applied) resolves to an error rather than throwing,
-     * so the card shows an em dash instead of taking the page down.
-     */
-    ...RESOURCES.map(async (resource) => {
-      const { count, error } = await supabase
-        .from(resource.table)
-        .select("id", { count: "exact", head: true });
-      return { slug: resource.slug, count: error ? null : count ?? 0 };
-    }),
-  ]);
+  const [webinars, orders, coupons, enquiries, subscribers, ...contentCounts] =
+    await Promise.all([
+      supabase.from("webinars").select("id, is_published, video_path, video_url"),
+      supabase.from("orders").select("status, subtotal_cents, discount_cents"),
+      supabase.from("coupons").select("id", { count: "exact", head: true }),
+      supabase.from("contact_messages").select("id", { count: "exact", head: true }),
+      supabase.from("newsletter_subscribers").select("id", { count: "exact", head: true }),
+      /*
+       * head+exact gives a count without transferring rows. A missing table (the
+       * 0006 migration not yet applied) resolves to an error rather than throwing,
+       * so the card shows an em dash instead of taking the page down.
+       */
+      ...RESOURCES.map(async (resource) => {
+        const { count, error } = await supabase
+          .from(resource.table)
+          .select("id", { count: "exact", head: true });
+        return { slug: resource.slug, count: error ? null : count ?? 0 };
+      }),
+    ]);
 
   const countBySlug = new Map(contentCounts.map((c) => [c.slug, c.count]));
 
@@ -74,7 +85,7 @@ export default async function AdminDashboard() {
     { label: "Paid orders", value: String(paid.length) },
     {
       label: "Revenue",
-      value: formatPrice(paid.reduce((s, o) => s + o.subtotal_cents, 0)),
+      value: formatPrice(paid.reduce((s, o) => s + o.subtotal_cents - (o.discount_cents ?? 0), 0)),
     },
   ];
 
@@ -176,6 +187,33 @@ export default async function AdminDashboard() {
           title="All Orders"
           body="Every order in one list, any status."
           count={allOrders.length}
+        />
+      </div>
+
+      <h2 className="mt-10 text-[13px] font-bold uppercase tracking-wider text-slate-500">
+        Other
+      </h2>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Card
+          href="/admin/coupons"
+          icon={Ticket}
+          title="Coupons"
+          body="Discount codes for checkout."
+          count={coupons.error ? null : coupons.count ?? 0}
+        />
+        <Card
+          href="/admin/enquiries"
+          icon={MessagesSquare}
+          title="Enquiries"
+          body="Contact form submissions."
+          count={enquiries.error ? null : enquiries.count ?? 0}
+        />
+        <Card
+          href="/admin/subscribers"
+          icon={Mail}
+          title="Subscribers"
+          body="Newsletter sign-ups."
+          count={subscribers.error ? null : subscribers.count ?? 0}
         />
       </div>
     </>

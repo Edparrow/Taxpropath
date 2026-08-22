@@ -2,7 +2,7 @@ import "server-only";
 import { createClient as createBrowserlessClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import type { PricingOption, Webinar } from "@/lib/types";
+import type { FaqItem, PricingOption, Webinar } from "@/lib/types";
 import { WEBINARS as STATIC_WEBINARS } from "./webinars";
 
 /**
@@ -32,6 +32,9 @@ type Row = {
   is_featured: boolean;
   video_path?: string | null;
   video_url?: string | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  faq?: FaqItem[] | null;
   presenters: { name: string } | null;
   pricing_options: {
     id: string;
@@ -52,13 +55,15 @@ const BASE_COLUMNS = `
 `;
 
 const VIDEO_COLUMNS = "video_path, video_url,";
+const FAQ_COLUMNS = "seo_title, seo_description, faq,";
 
 /*
- * The video columns arrive in migration 0005. Selecting a column that doesn't
- * exist fails the whole query, which would blank the catalog — so probe once
- * and fall back to the base column list until the migration is applied.
+ * The video columns arrive in migration 0005, seo/faq in 0007. Selecting a
+ * column that doesn't exist fails the whole query, which would blank the
+ * catalog — so probe each group once and fall back until applied.
  */
 let videoColumnsExist: boolean | null = null;
+let faqColumnsExist: boolean | null = null;
 
 async function selectClause(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -66,12 +71,29 @@ async function selectClause(
   if (videoColumnsExist === null) {
     const { error } = await supabase.from("webinars").select("video_url").limit(1);
     videoColumnsExist = !error;
-    if (!error) return `${VIDEO_COLUMNS} ${BASE_COLUMNS}`;
-    console.warn(
-      "[catalog] video columns missing — apply supabase/migrations/0005_admin.sql",
-    );
+    if (error) {
+      console.warn(
+        "[catalog] video columns missing — apply supabase/migrations/0005_admin.sql",
+      );
+    }
   }
-  return videoColumnsExist ? `${VIDEO_COLUMNS} ${BASE_COLUMNS}` : BASE_COLUMNS;
+  if (faqColumnsExist === null) {
+    const { error } = await supabase.from("webinars").select("faq").limit(1);
+    faqColumnsExist = !error;
+    if (error) {
+      console.warn(
+        "[catalog] faq/seo columns missing — apply supabase/migrations/0007_admin_expansion.sql",
+      );
+    }
+  }
+
+  return [
+    videoColumnsExist ? VIDEO_COLUMNS : "",
+    faqColumnsExist ? FAQ_COLUMNS : "",
+    BASE_COLUMNS,
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 export type CatalogWebinar = Webinar & {
@@ -114,6 +136,9 @@ function toWebinar(row: Row): CatalogWebinar {
     videoPath: row.video_path ?? null,
     videoUrl: row.video_url ?? null,
     pricingOptions: options,
+    seoTitle: row.seo_title ?? null,
+    seoDescription: row.seo_description ?? null,
+    faq: row.faq ?? [],
   };
 }
 

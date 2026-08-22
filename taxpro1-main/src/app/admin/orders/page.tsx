@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Download, Receipt } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { formatPrice } from "@/lib/utils";
@@ -9,6 +10,8 @@ type Row = {
   id: string;
   status: string;
   subtotal_cents: number;
+  discount_cents: number | null;
+  coupon_code: string | null;
   currency: string;
   guest_email: string | null;
   paypal_capture_id: string | null;
@@ -60,8 +63,8 @@ export default async function AdminOrdersPage({
   let query = supabase
     .from("orders")
     .select(
-      `id, status, subtotal_cents, currency, guest_email, paypal_capture_id,
-       paid_at, created_at, billing,
+      `id, status, subtotal_cents, discount_cents, coupon_code, currency, guest_email,
+       paypal_capture_id, paid_at, created_at, billing,
        order_items ( title_snapshot, option_snapshot, quantity, unit_price_cents )`,
     )
     .order("created_at", { ascending: false })
@@ -74,11 +77,20 @@ export default async function AdminOrdersPage({
 
   const orders = (data ?? []) as unknown as Row[];
   const paid = orders.filter((o) => o.status === "paid");
-  const revenue = paid.reduce((sum, o) => sum + o.subtotal_cents, 0);
+  const revenue = paid.reduce((sum, o) => sum + o.subtotal_cents - (o.discount_cents ?? 0), 0);
 
   return (
     <>
-      <h1 className="text-2xl font-extrabold text-navy-950">Orders</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-extrabold text-navy-950">Orders</h1>
+        <Link
+          href={`/admin/orders/export${active === "all" ? "" : `?status=${active}`}`}
+          className="flex shrink-0 items-center gap-2 rounded-full border border-slate-300 px-5 py-2.5 text-[14px] font-bold text-navy-950 transition-colors duration-200 hover:bg-slate-50"
+        >
+          <Download className="size-4" aria-hidden />
+          Export CSV
+        </Link>
+      </div>
 
       <nav className="mt-5 flex flex-wrap gap-2">
         {TABS.map((tab) => (
@@ -123,9 +135,11 @@ export default async function AdminOrdersPage({
                 <th className="px-5 py-3">Order</th>
                 <th className="px-5 py-3">Customer</th>
                 <th className="px-5 py-3">Items</th>
+                <th className="px-5 py-3">Coupon</th>
                 <th className="px-5 py-3">Total</th>
                 <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3">Payment ref</th>
+                <th className="px-5 py-3 text-right">Invoice</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -169,8 +183,22 @@ export default async function AdminOrdersPage({
                         ))}
                       </ul>
                     </td>
+                    <td className="px-5 py-4 text-ink-muted">
+                      {o.coupon_code ? (
+                        <span className="rounded-full bg-brand-50 px-2.5 py-0.5 font-mono text-[12px] font-bold text-brand-700">
+                          {o.coupon_code}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                     <td className="whitespace-nowrap px-5 py-4 font-bold tabular-nums text-navy-950">
-                      {formatPrice(o.subtotal_cents)}
+                      {formatPrice(o.subtotal_cents - (o.discount_cents ?? 0))}
+                      {o.discount_cents ? (
+                        <span className="ml-1 block text-[11.5px] font-normal text-ink-muted">
+                          ({formatPrice(o.subtotal_cents)} − {formatPrice(o.discount_cents)})
+                        </span>
+                      ) : null}
                     </td>
                     <td className="px-5 py-4">
                       <span
@@ -185,6 +213,16 @@ export default async function AdminOrdersPage({
                       <span className="font-mono text-[12px] text-ink-muted">
                         {o.paypal_capture_id ?? "—"}
                       </span>
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <Link
+                        href={`/admin/orders/${o.id}/invoice`}
+                        target="_blank"
+                        aria-label="View invoice"
+                        className="inline-flex items-center justify-center rounded-lg border border-slate-300 p-1.5 text-navy-950 transition-colors duration-200 hover:bg-slate-50"
+                      >
+                        <Receipt className="size-3.5" aria-hidden />
+                      </Link>
                     </td>
                   </tr>
                 );

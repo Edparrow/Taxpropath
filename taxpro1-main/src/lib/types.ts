@@ -7,6 +7,11 @@ export type PricingOption = {
   priceCents: number;
 };
 
+export type FaqItem = {
+  question: string;
+  answer: string;
+};
+
 export type Webinar = {
   slug: string;
   title: string;
@@ -27,6 +32,11 @@ export type Webinar = {
   industry: string;
   isFeatured: boolean;
   pricingOptions: PricingOption[];
+  // Optional: only the Supabase-backed catalog populates these (the hand-
+  // transcribed static fallback in ./data/webinars.ts predates them).
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  faq?: FaqItem[];
 };
 
 export type CartLine = {

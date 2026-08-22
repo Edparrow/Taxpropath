@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { Info, Lock } from "lucide-react";
+import { Info, Loader2, Lock, Tag, X } from "lucide-react";
 import { useCart } from "@/components/cart-provider";
 import { COUNTRIES } from "@/lib/data/countries";
 import { Field, Input, Select } from "@/components/form";
@@ -23,6 +23,43 @@ export function CheckoutClient({
   const [paid, setPaid] = useState<{ orderId: string; captureId: string | null } | null>(
     null,
   );
+
+  const [couponInput, setCouponInput] = useState("");
+  const [applying, setApplying] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [applied, setApplied] = useState<{ code: string; discountCents: number } | null>(
+    null,
+  );
+
+  const totalCents = Math.max(0, subtotalCents - (applied?.discountCents ?? 0));
+
+  async function applyCoupon() {
+    const code = couponInput.trim();
+    if (!code) return;
+    setApplying(true);
+    setCouponError(null);
+    try {
+      const res = await fetch("/api/coupon/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, subtotalCents }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "That coupon isn't valid.");
+      setApplied({ code: body.code, discountCents: body.discountCents });
+    } catch (err) {
+      setApplied(null);
+      setCouponError(err instanceof Error ? err.message : "That coupon isn't valid.");
+    } finally {
+      setApplying(false);
+    }
+  }
+
+  function removeCoupon() {
+    setApplied(null);
+    setCouponInput("");
+    setCouponError(null);
+  }
 
   /**
    * Called by the PayPal SDK before it opens the payment window. Returning null
@@ -209,11 +246,69 @@ export function CheckoutClient({
                     </li>
                   ))}
                 </ul>
-                <div className="mt-6 flex items-baseline justify-between">
-                  <p className="text-base font-bold text-navy-950">Total</p>
-                  <p className="text-2xl font-extrabold tabular-nums text-navy-950">
-                    {formatPrice(subtotalCents)}
-                  </p>
+                <div className="mt-6">
+                  {applied ? (
+                    <div className="flex items-center justify-between gap-3 rounded-xl bg-brand-50 px-4 py-2.5">
+                      <p className="flex items-center gap-1.5 text-[13px] font-bold text-brand-700">
+                        <Tag className="size-3.5" aria-hidden />
+                        {applied.code} applied
+                      </p>
+                      <button
+                        type="button"
+                        onClick={removeCoupon}
+                        aria-label="Remove coupon"
+                        className="cursor-pointer text-brand-700 hover:text-brand-900"
+                      >
+                        <X className="size-4" aria-hidden />
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="flex gap-2">
+                        <input
+                          value={couponInput}
+                          onChange={(e) => setCouponInput(e.target.value)}
+                          placeholder="Coupon code"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-[14px] uppercase text-navy-950 outline-none transition-colors duration-200 focus:border-brand-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={applyCoupon}
+                          disabled={applying || !couponInput.trim()}
+                          className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-slate-300 px-4 text-[13.5px] font-bold text-navy-950 transition-colors duration-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {applying && <Loader2 className="size-3.5 animate-spin" aria-hidden />}
+                          Apply
+                        </button>
+                      </div>
+                      {couponError && (
+                        <p className="mt-1.5 text-[12.5px] text-red-700">{couponError}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-6 space-y-2 border-t border-navy-950/10 pt-6">
+                  <div className="flex items-baseline justify-between">
+                    <p className="text-[14px] text-ink-muted">Subtotal</p>
+                    <p className="text-[14px] font-semibold tabular-nums text-navy-950">
+                      {formatPrice(subtotalCents)}
+                    </p>
+                  </div>
+                  {applied && (
+                    <div className="flex items-baseline justify-between">
+                      <p className="text-[14px] text-brand-700">Discount</p>
+                      <p className="text-[14px] font-semibold tabular-nums text-brand-700">
+                        −{formatPrice(applied.discountCents)}
+                      </p>
+                    </div>
+                  )}
+                  <div className="flex items-baseline justify-between">
+                    <p className="text-base font-bold text-navy-950">Total</p>
+                    <p className="text-2xl font-extrabold tabular-nums text-navy-950">
+                      {formatPrice(totalCents)}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="mt-8">
@@ -221,6 +316,7 @@ export function CheckoutClient({
                     <PaypalCheckout
                       clientId={paypalClientId}
                       lines={lines}
+                      couponCode={applied?.code}
                       getBilling={getBilling}
                       onPaid={handlePaid}
                     />

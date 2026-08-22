@@ -22,8 +22,8 @@ export async function generateMetadata({
   const webinar = await getWebinar(slug);
   if (!webinar) return { title: "Webinar not found" };
   return {
-    title: webinar.title,
-    description: webinar.description[0]?.slice(0, 160),
+    title: webinar.seoTitle || webinar.title,
+    description: webinar.seoDescription || webinar.description[0]?.slice(0, 160),
   };
 }
 
@@ -161,6 +161,32 @@ export default async function WebinarDetailPage({
             <p className="mt-4 text-[15px] text-ink-muted">
               Includes case studies and a live Q&amp;A session with the speaker.
             </p>
+
+            {webinar.faq && webinar.faq.length > 0 && (
+              <>
+                <h2 className="mb-5 mt-12 text-2xl font-extrabold text-navy-950">
+                  Frequently Asked Questions
+                </h2>
+                <div className="space-y-3">
+                  {webinar.faq.map((item, i) => (
+                    <details
+                      key={i}
+                      className="group rounded-2xl border border-slate-200 px-5 py-4 open:bg-cream"
+                    >
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15.5px] font-bold text-navy-950">
+                        {item.question}
+                        <span className="shrink-0 text-brand-600 transition-transform duration-200 group-open:rotate-45">
+                          +
+                        </span>
+                      </summary>
+                      <p className="mt-3 text-[15px] leading-relaxed text-ink-muted">
+                        {item.answer}
+                      </p>
+                    </details>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           <aside className="lg:sticky lg:top-28 lg:self-start">

@@ -4,6 +4,7 @@ import { createAdminClient, hasServiceRoleKey } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createPaypalOrder, isPaypalConfigured } from "@/lib/paypal";
 import { priceCart, sanitizeBilling } from "@/lib/cart-pricing";
+import { validateCoupon } from "@/lib/coupons";
 
 export async function POST(request: Request) {
   if (!isPaypalConfigured() || !isSupabaseConfigured() || !hasServiceRoleKey()) {
@@ -44,10 +45,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: priced.error }, { status: 400 });
   }
 
+  // The discount is derived from priced.totalCents (server-priced), never
+  // from anything the client claims the subtotal or discount to be.
+  let discountCents = 0;
+  let couponCode: string | null = null;
+  if (body.couponCode) {
+    const coupon = await validateCoupon(body.couponCode, priced.totalCents);
+    if (!coupon.ok) {
+      return NextResponse.json({ error: coupon.error }, { status: 400 });
+    }
+    discountCents = coupon.discountCents;
+    couponCode = coupon.code || null;
+  }
+  const finalTotalCents = priced.totalCents - discountCents;
+
   try {
-    // The amount handed to PayPal comes from priceCart, never from the client.
+    // The amount handed to PayPal comes from priceCart minus the verified
+    // discount, never from the client.
     const paypalOrder = await createPaypalOrder({
-      totalCents: priced.totalCents,
+      totalCents: finalTotalCents,
       lines: priced.items.map((i) => ({
         title: i.title_snapshot,
         optionLabel: i.option_snapshot,
@@ -66,6 +82,8 @@ export async function POST(request: Request) {
       p_billing: billing,
       p_items: priced.items,
       p_paypal_order_id: paypalOrder.id,
+      p_coupon_code: couponCode,
+      p_discount_cents: discountCents,
     });
 
     if (error) {

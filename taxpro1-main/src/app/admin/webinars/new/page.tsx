@@ -29,6 +29,9 @@ const BLANK: WebinarFormValues = {
   videoPath: null,
   videoUrl: "",
   options: [],
+  seoTitle: "",
+  seoDescription: "",
+  faq: [],
 };
 
 export default async function NewWebinarPage() {

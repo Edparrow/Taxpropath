@@ -1,15 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
+  BookOpen,
   Building2,
   FolderTree,
   Image as ImageIcon,
+  Images,
   Info,
   LayoutDashboard,
   Layers,
+  Mail,
   MessageSquareQuote,
+  MessagesSquare,
   ShoppingBag,
   Tags,
+  Ticket,
   Users,
   Video,
 } from "lucide-react";
@@ -35,9 +40,14 @@ const NAV: { href: string; label: string; icon: typeof LayoutDashboard }[] = [
   { href: "/admin/content/testimonials", label: "Testimonial", icon: MessageSquareQuote },
   { href: "/admin/content/industries", label: "Industries", icon: Building2 },
   { href: "/admin/content/brands", label: "Brands", icon: Tags },
+  { href: "/admin/content/blog", label: "Blog", icon: BookOpen },
+  { href: "/admin/content/gallery", label: "Gallery", icon: Images },
+  { href: "/admin/coupons", label: "Coupons", icon: Ticket },
   { href: "/admin/users", label: "Register User", icon: Users },
   { href: "/admin/orders?status=paid", label: "Completed Orders", icon: ShoppingBag },
   { href: "/admin/orders?status=failed", label: "Failed Orders", icon: ShoppingBag },
+  { href: "/admin/enquiries", label: "Enquiry", icon: MessagesSquare },
+  { href: "/admin/subscribers", label: "Subscribers", icon: Mail },
 ];
 
 export default async function AdminLayout({
@@ -50,7 +60,7 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-slate-100 lg:flex">
-      <aside className="bg-navy-950 lg:w-64 lg:shrink-0">
+      <aside className="bg-navy-950 lg:w-64 lg:shrink-0 print:hidden">
         <div className="px-6 py-6">
           <Link href="/admin" className="text-xl font-extrabold text-white">
             Taxpropath
@@ -75,7 +85,7 @@ export default async function AdminLayout({
       </aside>
 
       <div className="min-w-0 flex-1">
-        <header className="border-b border-slate-200 bg-white">
+        <header className="border-b border-slate-200 bg-white print:hidden">
           <div className="flex items-center gap-4 px-4 py-4 sm:px-6 lg:px-8">
             <p className="text-[15px] font-bold text-navy-950">
               Welcome To Taxpropath Dashboard!
