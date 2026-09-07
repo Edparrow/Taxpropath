@@ -56,21 +56,25 @@ export const metadata: Metadata = {
   },
 };
 
+import { ThemeProvider } from "@/components/theme-provider";
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${montserrat.variable} ${poppins.variable} font-sans antialiased`}>
-        <CartProvider>
-          <div className="flex min-h-dvh flex-col">
-            <SiteHeader />
-            <main className="flex-1">{children}</main>
-            <SiteFooter />
-          </div>
-          {/* TEMP: disabled per request. Restore by uncommenting the import above and this line. */}
-          {/* <AIChat /> */}
-        </CartProvider>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+          <CartProvider>
+            <div className="flex min-h-dvh flex-col">
+              <SiteHeader />
+              <main className="flex-1">{children}</main>
+              <SiteFooter />
+            </div>
+            {/* TEMP: disabled per request. Restore by uncommenting the import above and this line. */}
+            {/* <AIChat /> */}
+          </CartProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -1,54 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  BookOpen,
-  Building2,
-  FolderTree,
-  Image as ImageIcon,
-  Images,
-  Info,
-  LayoutDashboard,
-  Layers,
-  Mail,
-  MessageSquareQuote,
-  MessagesSquare,
-  ShoppingBag,
-  Tags,
-  Ticket,
-  Users,
-  Video,
-} from "lucide-react";
+import { Search, Bell, ChevronDown } from "lucide-react";
 import { requireAdmin } from "@/lib/admin-auth";
+import { SidebarNav } from "./sidebar-nav";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const metadata: Metadata = {
   title: { default: "Admin", template: "%s | Taxpropath Admin" },
   robots: { index: false, follow: false },
 };
-
-/**
- * Mirrors the sections of the legacy admin panel. Content sections all point at
- * the generic CRUD under /admin/content/<resource>; webinars and orders keep
- * their own purpose-built screens.
- */
-const NAV: { href: string; label: string; icon: typeof LayoutDashboard }[] = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/content/banners", label: "Banner", icon: ImageIcon },
-  { href: "/admin/content/categories", label: "Category", icon: FolderTree },
-  { href: "/admin/content/subcategories", label: "SubCategory", icon: Layers },
-  { href: "/admin/webinars", label: "Service", icon: Video },
-  { href: "/admin/content/about", label: "About", icon: Info },
-  { href: "/admin/content/testimonials", label: "Testimonial", icon: MessageSquareQuote },
-  { href: "/admin/content/industries", label: "Industries", icon: Building2 },
-  { href: "/admin/content/brands", label: "Brands", icon: Tags },
-  { href: "/admin/content/blog", label: "Blog", icon: BookOpen },
-  { href: "/admin/content/gallery", label: "Gallery", icon: Images },
-  { href: "/admin/coupons", label: "Coupons", icon: Ticket },
-  { href: "/admin/users", label: "Register User", icon: Users },
-  { href: "/admin/orders?status=paid", label: "Completed Orders", icon: ShoppingBag },
-  { href: "/admin/orders?status=failed", label: "Failed Orders", icon: ShoppingBag },
-  { href: "/admin/enquiries", label: "Enquiry", icon: MessagesSquare },
-  { href: "/admin/subscribers", label: "Subscribers", icon: Mail },
-];
 
 export default async function AdminLayout({
   children,
@@ -59,52 +19,65 @@ export default async function AdminLayout({
   const admin = await requireAdmin();
 
   return (
-    <div className="min-h-screen bg-slate-100 lg:flex">
-      <aside className="bg-navy-950 lg:w-64 lg:shrink-0 print:hidden">
-        <div className="px-6 py-6">
-          <Link href="/admin" className="text-xl font-extrabold text-white">
-            Taxpropath
-          </Link>
-          <p className="mt-1 text-[12px] font-semibold uppercase tracking-wider text-slate-500">
-            Admin Panel
-          </p>
-        </div>
-
-        <nav className="flex flex-wrap gap-1 px-3 pb-6 lg:flex-col lg:flex-nowrap">
-          {NAV.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-semibold text-slate-300 transition-colors duration-200 hover:bg-white/[0.06] hover:text-white"
-            >
-              <Icon className="size-4 shrink-0 text-brand-500" aria-hidden />
-              {label}
-            </Link>
-          ))}
-        </nav>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex transition-colors duration-300">
+      {/* Sidebar Area */}
+      <aside className="hidden lg:block w-72 shrink-0 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 print:hidden transition-colors duration-300">
+        <SidebarNav />
       </aside>
 
-      <div className="min-w-0 flex-1">
-        <header className="border-b border-slate-200 bg-white print:hidden">
-          <div className="flex items-center gap-4 px-4 py-4 sm:px-6 lg:px-8">
-            <p className="text-[15px] font-bold text-navy-950">
-              Welcome To Taxpropath Dashboard!
-            </p>
-            <div className="ml-auto flex items-center gap-4">
-              <span className="hidden text-[13px] text-ink-muted sm:inline">
-                {admin.email}
-              </span>
-              <Link
-                href="/"
-                className="text-[13px] font-semibold text-brand-700 hover:underline"
-              >
-                View site
-              </Link>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Topbar */}
+        <header className="bg-slate-50 dark:bg-slate-950 sticky top-0 z-10 print:hidden transition-colors duration-300">
+          <div className="flex h-20 items-center justify-between px-8">
+            
+            {/* Search Input Simulation */}
+            <div className="relative w-full max-w-md hidden md:block">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-400 dark:text-slate-500" />
+              <input 
+                type="text" 
+                placeholder="Search..." 
+                className="w-full rounded-full border-none bg-white dark:bg-slate-900 py-3 pl-11 pr-4 text-[14px] font-medium text-navy-950 dark:text-slate-100 shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-colors duration-300"
+              />
+            </div>
+
+            {/* Right side icons and profile */}
+            <div className="ml-auto flex items-center gap-4 lg:gap-6">
+              
+              {/* Action Icons */}
+              <div className="flex items-center gap-3">
+                <ThemeToggle />
+                <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 shadow-sm text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors relative">
+                  <span className="absolute top-2.5 right-2.5 size-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-800"></span>
+                  <Bell className="size-[18px]" />
+                </button>
+              </div>
+
+              {/* Separator */}
+              <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block transition-colors duration-300"></div>
+
+              {/* User Profile */}
+              <div className="flex items-center gap-3 cursor-pointer">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-tr from-brand-500 to-brand-300 text-white shadow-sm overflow-hidden">
+                  <span className="font-bold text-sm">{admin.email?.[0].toUpperCase() ?? 'A'}</span>
+                </div>
+                <div className="hidden md:block text-right">
+                  <p className="text-[13px] font-bold text-navy-950 dark:text-slate-100 leading-tight">Admin User</p>
+                  <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate max-w-[120px]">{admin.email}</p>
+                </div>
+                <ChevronDown className="hidden md:block size-4 text-slate-400 dark:text-slate-500" />
+              </div>
+
             </div>
           </div>
         </header>
 
-        <main className="px-4 py-10 sm:px-6 lg:px-8">{children}</main>
+        {/* Dashboard Content */}
+        <main className="flex-1 px-8 pb-12 pt-4">
+          <div className="mx-auto max-w-7xl">
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   );

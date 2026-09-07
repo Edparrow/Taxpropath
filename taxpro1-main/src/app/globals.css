@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   /* Brand — sampled from the Taxpropath logo (green → blue gradient) */
@@ -88,3 +89,4 @@ body {
     scroll-behavior: auto !important;
   }
 }
+@custom-variant dark (&:where(.dark, .dark *));
