@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Mail, MapPin } from "lucide-react";
 import { NewsletterForm } from "@/components/newsletter-form";
+import { ChatbotWidget } from "@/components/chatbot-widget";
 
 const INDUSTRIES = [
   "Banking & Taxation",
@@ -102,6 +103,8 @@ export function SiteFooter() {
           Copyright &copy; 2026 Taxpropath. All Rights Reserved
         </p>
       </div>
+
+      <ChatbotWidget />
     </footer>
   );
 }
