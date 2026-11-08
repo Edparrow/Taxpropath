@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-auth";
+import { can } from "@/lib/admin/permissions";
+import { ViewOnlyNotice } from "../view-only";
 import { formatPrice } from "@/lib/utils";
 import { deleteCoupon } from "./actions";
 
@@ -19,7 +21,8 @@ type Row = {
 };
 
 export default async function AdminCouponsPage() {
-  await requireAdmin();
+  const admin = await requireAdmin("coupons");
+  const canEdit = can(admin, "coupons", "edit");
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -31,18 +34,21 @@ export default async function AdminCouponsPage() {
 
   return (
     <>
+      {!canEdit && <ViewOnlyNotice />}
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-navy-950">Coupons</h1>
           <p className="mt-1 text-[14px] text-ink-muted">Discount codes for checkout.</p>
         </div>
-        <Link
-          href="/admin/coupons/new"
-          className="flex shrink-0 items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-[14px] font-bold text-white transition-transform duration-200 hover:-translate-y-0.5"
-        >
-          <Plus className="size-4" aria-hidden />
-          New coupon
-        </Link>
+        {canEdit && (
+          <Link
+            href="/admin/coupons/new"
+            className="flex shrink-0 items-center gap-2 rounded-full bg-brand-gradient shadow-md shadow-brand-600/20 px-5 py-2.5 text-[14px] font-bold text-white transition-transform duration-200 hover:-translate-y-0.5"
+          >
+            <Plus className="size-4" aria-hidden />
+            New coupon
+          </Link>
+        )}
       </div>
 
       {error && (
@@ -114,16 +120,18 @@ export default async function AdminCouponsPage() {
                         <Pencil className="size-3.5" aria-hidden />
                         Edit
                       </Link>
-                      <form action={deleteCoupon}>
-                        <input type="hidden" name="id" value={row.id} />
-                        <button
-                          type="submit"
-                          aria-label="Delete coupon"
-                          className="flex items-center justify-center rounded-lg border border-slate-300 p-1.5 text-red-700 transition-colors duration-200 hover:border-red-300 hover:bg-red-50"
-                        >
-                          <Trash2 className="size-3.5" aria-hidden />
-                        </button>
-                      </form>
+                      {canEdit && (
+                        <form action={deleteCoupon}>
+                          <input type="hidden" name="id" value={row.id} />
+                          <button
+                            type="submit"
+                            aria-label="Delete coupon"
+                            className="flex items-center justify-center rounded-lg border border-slate-300 p-1.5 text-red-700 transition-colors duration-200 hover:border-red-300 hover:bg-red-50"
+                          >
+                            <Trash2 className="size-3.5" aria-hidden />
+                          </button>
+                        </form>
+                      )}
                     </div>
                   </td>
                 </tr>

@@ -1,14 +1,17 @@
-import { getWebinar } from "@/lib/data/catalog";
+import { getCourse } from "@/lib/data/catalog";
+import { COURSE_CODES } from "@/lib/types";
 
 export type IncomingLine = {
-  webinarSlug: string;
-  optionId: string;
-  quantity: number;
+  courseSlug: string;
+  /** Add-ons riding on the course line: codes, or {code} objects from CartLine. */
+  addons?: unknown;
 };
 
+/** One order_items row, in the shape the place_order RPC expects. */
 export type PricedItem = {
-  webinar_slug: string;
+  course_slug: string;
   pricing_option_id: string;
+  option_code: string | null;
   quantity: number;
   unit_price_cents: number;
   title_snapshot: string;
@@ -30,10 +33,16 @@ export const BILLING_FIELDS = [
   "region",
 ] as const;
 
+const UNAVAILABLE = "One of the items in your cart is no longer available.";
+
 /**
  * Re-derives every line's price from the catalog. Client-supplied prices are
  * ignored entirely — this is the only place an order total is allowed to come
  * from, so a tampered cart can never change what the buyer is charged.
+ *
+ * Self-study only: each course is priced by (course_slug, code) and becomes one
+ * order item per product — the SELF_STUDY base plus each chosen add-on — with
+ * quantity fixed at one. A course listed twice is only charged once.
  */
 export async function priceCart(
   lines: unknown,
@@ -48,27 +57,46 @@ export async function priceCart(
   }
 
   const items: PricedItem[] = [];
+  const seen = new Set<string>();
 
   for (const line of lines as IncomingLine[]) {
-    const webinar = await getWebinar(String(line?.webinarSlug));
-    const option = webinar?.pricingOptions.find((o) => o.id === line?.optionId);
-    if (!webinar || !option) {
-      return { ok: false, error: "One of the items in your cart is no longer available." };
-    }
+    const slug = String(line?.courseSlug ?? "");
+    if (seen.has(slug)) continue;
+    seen.add(slug);
 
-    const quantity = Math.floor(Number(line.quantity));
-    if (!Number.isFinite(quantity) || quantity < 1 || quantity > 99) {
-      return { ok: false, error: "Invalid quantity." };
-    }
+    const course = await getCourse(slug);
+    const base = course?.pricingOptions.find((o) => o.code === COURSE_CODES.base);
+    if (!course || !base) return { ok: false, error: UNAVAILABLE };
 
     items.push({
-      webinar_slug: webinar.slug,
-      pricing_option_id: option.id,
-      quantity,
-      unit_price_cents: option.priceCents,
-      title_snapshot: webinar.title,
-      option_snapshot: option.label,
+      course_slug: course.slug,
+      pricing_option_id: base.id,
+      option_code: COURSE_CODES.base,
+      quantity: 1,
+      unit_price_cents: base.priceCents,
+      title_snapshot: course.title,
+      option_snapshot: base.label || "Self-Study",
     });
+
+    const requested = Array.isArray(line.addons)
+      ? line.addons.map((a) =>
+          typeof a === "string" ? a : String((a as { code?: unknown })?.code ?? ""),
+        )
+      : [];
+    for (const code of COURSE_CODES.addons) {
+      if (!requested.includes(code)) continue;
+      const addon = course.pricingOptions.find((o) => o.code === code);
+      if (!addon) return { ok: false, error: UNAVAILABLE };
+      items.push({
+        course_slug: course.slug,
+        pricing_option_id: addon.id,
+        option_code: code,
+        quantity: 1,
+        unit_price_cents: addon.priceCents,
+        title_snapshot: course.title,
+        option_snapshot: addon.label,
+      });
+    }
   }
 
   return {

@@ -1,6 +1,8 @@
 import { Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-auth";
+import { can } from "@/lib/admin/permissions";
+import { ViewOnlyNotice } from "../view-only";
 import { deleteEnquiry } from "./actions";
 
 export const metadata = { title: "Enquiries" };
@@ -19,7 +21,8 @@ type Row = {
  * reference panel's Enquiry module — view and delete, no reply-from-here.
  */
 export default async function AdminEnquiriesPage() {
-  await requireAdmin();
+  const admin = await requireAdmin("enquiries");
+  const canEdit = can(admin, "enquiries", "edit");
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -32,6 +35,7 @@ export default async function AdminEnquiriesPage() {
 
   return (
     <>
+      {!canEdit && <ViewOnlyNotice />}
       <div>
         <h1 className="text-2xl font-extrabold text-navy-950">Enquiries</h1>
         <p className="mt-1 text-[14px] text-ink-muted">
@@ -78,16 +82,18 @@ export default async function AdminEnquiriesPage() {
                       year: "numeric",
                     })}
                   </p>
-                  <form action={deleteEnquiry}>
-                    <input type="hidden" name="id" value={row.id} />
-                    <button
-                      type="submit"
-                      aria-label="Delete enquiry"
-                      className="flex items-center justify-center rounded-lg border border-slate-300 p-1.5 text-red-700 transition-colors duration-200 hover:border-red-300 hover:bg-red-50"
-                    >
-                      <Trash2 className="size-3.5" aria-hidden />
-                    </button>
-                  </form>
+                  {canEdit && (
+                    <form action={deleteEnquiry}>
+                      <input type="hidden" name="id" value={row.id} />
+                      <button
+                        type="submit"
+                        aria-label="Delete enquiry"
+                        className="flex items-center justify-center rounded-lg border border-slate-300 p-1.5 text-red-700 transition-colors duration-200 hover:border-red-300 hover:bg-red-50"
+                      >
+                        <Trash2 className="size-3.5" aria-hidden />
+                      </button>
+                    </form>
+                  )}
                 </div>
               </div>
               <p className="mt-3 whitespace-pre-wrap text-[14px] leading-relaxed text-navy-950">

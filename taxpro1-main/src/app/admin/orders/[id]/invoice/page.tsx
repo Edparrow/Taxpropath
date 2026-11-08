@@ -25,18 +25,13 @@ type Row = {
   }[];
 };
 
-/**
- * Browser-native "print → save as PDF" rather than a server-generated PDF —
- * that would need a new runtime dependency (e.g. a headless Chromium via
- * puppeteer) with real hosting-footprint cost on a small VPS. This gets the
- * same outcome (a PDF the admin can save/print) with none of that weight.
- */
+/** Printable invoice. A ready-made PDF comes from ./pdf (pdf-lib, no browser needed). */
 export default async function InvoicePage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireAdmin();
+  await requireAdmin(["orders", "order_sheet", "failed_orders", "abandoned"]);
   const { id } = await params;
   const supabase = await createClient();
 
@@ -59,7 +54,15 @@ export default async function InvoicePage({
     <div className="mx-auto max-w-2xl bg-white p-10 print:p-0">
       <div className="mb-8 flex items-center justify-between print:hidden">
         <h1 className="text-2xl font-extrabold text-navy-950">Invoice</h1>
-        <PrintButton />
+        <div className="flex gap-2">
+          <a
+            href={`/admin/orders/${order.id}/invoice/pdf`}
+            className="flex items-center gap-2 rounded-full border-2 border-slate-300 px-5 py-2 text-[14px] font-bold text-navy-950 hover:border-brand-600 hover:text-brand-700"
+          >
+            Download PDF
+          </a>
+          <PrintButton />
+        </div>
       </div>
 
       <div className="rounded-2xl border border-slate-200 p-8 print:border-none print:p-0">

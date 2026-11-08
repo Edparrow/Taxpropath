@@ -5,7 +5,7 @@ import { Badge, PageBanner } from "@/components/ui";
 
 export const metadata: Metadata = {
   title: "Gallery",
-  description: "Photos from Taxpropath webinars and events.",
+  description: "Photos from Taxpropath events.",
 };
 
 export default async function GalleryPage() {

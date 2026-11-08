@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Download, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-auth";
+import { can } from "@/lib/admin/permissions";
+import { ViewOnlyNotice } from "../view-only";
 import { deleteSubscriber } from "./actions";
 
 export const metadata = { title: "Subscribers" };
@@ -13,8 +15,14 @@ type Row = {
   subscribed_at: string;
 };
 
-export default async function AdminSubscribersPage() {
-  await requireAdmin();
+export default async function AdminSubscribersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
+  const admin = await requireAdmin("subscribers");
+  const canEdit = can(admin, "subscribers", "edit");
+  const { status = "" } = await searchParams;
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -23,17 +31,43 @@ export default async function AdminSubscribersPage() {
     .order("subscribed_at", { ascending: false })
     .limit(500);
 
-  const rows = (data ?? []) as Row[];
-  const active = rows.filter((r) => r.is_active).length;
+  const all = (data ?? []) as Row[];
+  const active = all.filter((r) => r.is_active).length;
+  // SkillSync keeps Unsubscribers on their own page; here it's a tab.
+  const rows =
+    status === "unsubscribed"
+      ? all.filter((r) => !r.is_active)
+      : status === "active"
+        ? all.filter((r) => r.is_active)
+        : all;
+  const tabs = [
+    { key: "", label: `All (${all.length})` },
+    { key: "active", label: `Subscribed (${active})` },
+    { key: "unsubscribed", label: `Unsubscribed (${all.length - active})` },
+  ];
 
   return (
     <>
+      {!canEdit && <ViewOnlyNotice />}
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-navy-950">Subscribers</h1>
           <p className="mt-1 text-[14px] text-ink-muted">
-            {rows.length} total, {active} active
+            {all.length} total, {active} active
           </p>
+          <nav className="mt-4 flex flex-wrap gap-2" aria-label="Filter subscribers">
+            {tabs.map((t) => (
+              <Link
+                key={t.key}
+                href={t.key ? `/admin/subscribers?status=${t.key}` : "/admin/subscribers"}
+                className={`rounded-full px-3.5 py-1.5 text-[13px] font-bold ${
+                  status === t.key ? "bg-brand-gradient text-white" : "border border-slate-300 text-slate-600 hover:bg-brand-50"
+                }`}
+              >
+                {t.label}
+              </Link>
+            ))}
+          </nav>
         </div>
         <Link
           href="/admin/subscribers/export"
@@ -90,16 +124,18 @@ export default async function AdminSubscribersPage() {
                     </span>
                   </td>
                   <td className="px-5 py-4 text-right">
-                    <form action={deleteSubscriber} className="inline">
-                      <input type="hidden" name="id" value={row.id} />
-                      <button
-                        type="submit"
-                        aria-label="Delete subscriber"
-                        className="inline-flex items-center justify-center rounded-lg border border-slate-300 p-1.5 text-red-700 transition-colors duration-200 hover:border-red-300 hover:bg-red-50"
-                      >
-                        <Trash2 className="size-3.5" aria-hidden />
-                      </button>
-                    </form>
+                    {canEdit && (
+                      <form action={deleteSubscriber} className="inline">
+                        <input type="hidden" name="id" value={row.id} />
+                        <button
+                          type="submit"
+                          aria-label="Delete subscriber"
+                          className="inline-flex items-center justify-center rounded-lg border border-slate-300 p-1.5 text-red-700 transition-colors duration-200 hover:border-red-300 hover:bg-red-50"
+                        >
+                          <Trash2 className="size-3.5" aria-hidden />
+                        </button>
+                      </form>
+                    )}
                   </td>
                 </tr>
               ))}

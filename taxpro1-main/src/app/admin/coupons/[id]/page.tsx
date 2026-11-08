@@ -30,7 +30,7 @@ export default async function EditCouponPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireAdmin();
+  await requireAdmin("coupons");
   const { id } = await params;
   const supabase = await createClient();
 

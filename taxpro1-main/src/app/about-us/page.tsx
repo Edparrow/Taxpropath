@@ -81,7 +81,7 @@ export default async function AboutPage() {
                 but also highly actionable.
               </p>
               <div className="mt-9">
-                <PillLink href="/webinar/upcoming">Explore Our Webinars</PillLink>
+                <PillLink href="/courses">Explore Our Courses</PillLink>
               </div>
             </div>
 
@@ -128,7 +128,7 @@ export default async function AboutPage() {
                   )}
                   {section.body && (
                     <div className="mt-4 space-y-4">
-                      {/* Blank lines separate paragraphs, as in the webinar copy. */}
+                      {/* Blank lines separate paragraphs, as in the course copy. */}
                       {section.body
                         .split(/\n{2,}/)
                         .filter(Boolean)

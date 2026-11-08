@@ -1,82 +1,83 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Search, Bell, ChevronDown } from "lucide-react";
+import { ChevronDown, KeyRound, LogOut, Menu } from "lucide-react";
 import { requireAdmin } from "@/lib/admin-auth";
 import { SidebarNav } from "./sidebar-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { adminLogout } from "./account/actions";
 
 export const metadata: Metadata = {
   title: { default: "Admin", template: "%s | Taxpropath Admin" },
   robots: { index: false, follow: false },
 };
 
-export default async function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  // Every /admin/* route inherits this check.
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  // Every /admin/* route inherits this check; pages add their own section check.
   const admin = await requireAdmin();
+  const allowed = Object.keys(admin.permissions);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex transition-colors duration-300">
-      {/* Sidebar Area */}
-      <aside className="hidden lg:block w-72 shrink-0 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 print:hidden transition-colors duration-300">
-        <SidebarNav />
+    <div className="flex min-h-screen bg-cream font-sans transition-colors duration-300 dark:bg-slate-950">
+      <aside className="hidden w-72 shrink-0 border-r border-cream-dark bg-white transition-colors duration-300 print:hidden lg:block dark:border-slate-800 dark:bg-slate-900">
+        <SidebarNav allowed={allowed} isSuper={admin.isSuper} />
       </aside>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Topbar */}
-        <header className="bg-slate-50 dark:bg-slate-950 sticky top-0 z-10 print:hidden transition-colors duration-300">
-          <div className="flex h-20 items-center justify-between px-8">
-            
-            {/* Search Input Simulation */}
-            <div className="relative w-full max-w-md hidden md:block">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-400 dark:text-slate-500" />
-              <input 
-                type="text" 
-                placeholder="Search..." 
-                className="w-full rounded-full border-none bg-white dark:bg-slate-900 py-3 pl-11 pr-4 text-[14px] font-medium text-navy-950 dark:text-slate-100 shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-colors duration-300"
-              />
-            </div>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-10 bg-cream/90 backdrop-blur-lg transition-colors duration-300 print:hidden dark:bg-slate-950">
+          <div className="flex h-20 items-center justify-between gap-4 px-4 sm:px-8">
+            {/* Mobile: the same sidebar in a drop-down panel. */}
+            <details className="relative lg:hidden">
+              <summary className="flex size-10 cursor-pointer list-none items-center justify-center rounded-full bg-white text-slate-600 shadow-sm dark:bg-slate-800 dark:text-slate-300">
+                <Menu className="size-5" aria-hidden />
+                <span className="sr-only">Menu</span>
+              </summary>
+              <div className="absolute left-0 top-12 z-20 h-[75vh] w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900">
+                <SidebarNav allowed={allowed} isSuper={admin.isSuper} />
+              </div>
+            </details>
 
-            {/* Right side icons and profile */}
             <div className="ml-auto flex items-center gap-4 lg:gap-6">
-              
-              {/* Action Icons */}
-              <div className="flex items-center gap-3">
-                <ThemeToggle />
-                <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 shadow-sm text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors relative">
-                  <span className="absolute top-2.5 right-2.5 size-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-800"></span>
-                  <Bell className="size-[18px]" />
-                </button>
-              </div>
+              <ThemeToggle />
+              <div className="hidden h-8 w-px bg-cream-dark sm:block dark:bg-slate-800" />
 
-              {/* Separator */}
-              <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block transition-colors duration-300"></div>
-
-              {/* User Profile */}
-              <div className="flex items-center gap-3 cursor-pointer">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-tr from-brand-500 to-brand-300 text-white shadow-sm overflow-hidden">
-                  <span className="font-bold text-sm">{admin.email?.[0].toUpperCase() ?? 'A'}</span>
+              <details className="relative">
+                <summary className="flex cursor-pointer list-none items-center gap-3">
+                  <span className="flex size-10 items-center justify-center overflow-hidden rounded-full bg-brand-gradient text-sm font-bold text-white shadow-sm">
+                    {admin.name[0]?.toUpperCase() ?? "A"}
+                  </span>
+                  <span className="hidden text-right md:block">
+                    <span className="block text-[13px] font-bold leading-tight text-navy-950 dark:text-slate-100">
+                      {admin.name}
+                    </span>
+                    <span className="block max-w-[160px] truncate text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                      {[admin.role, admin.isSuper ? "Super Admin" : null].filter(Boolean).join(" · ") || admin.email}
+                    </span>
+                  </span>
+                  <ChevronDown className="hidden size-4 text-slate-400 md:block" aria-hidden />
+                </summary>
+                <div className="absolute right-0 top-12 z-20 w-56 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+                  <p className="truncate px-3 py-2 text-[12px] text-ink-muted">{admin.email}</p>
+                  <Link
+                    href="/admin/change-password"
+                    className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[14px] font-semibold text-navy-950 hover:bg-slate-50 dark:text-slate-100 dark:hover:bg-slate-800"
+                  >
+                    <KeyRound className="size-4" aria-hidden />
+                    Change password
+                  </Link>
+                  <form action={adminLogout}>
+                    <button className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2.5 text-[14px] font-semibold text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40">
+                      <LogOut className="size-4" aria-hidden />
+                      Log out
+                    </button>
+                  </form>
                 </div>
-                <div className="hidden md:block text-right">
-                  <p className="text-[13px] font-bold text-navy-950 dark:text-slate-100 leading-tight">Admin User</p>
-                  <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate max-w-[120px]">{admin.email}</p>
-                </div>
-                <ChevronDown className="hidden md:block size-4 text-slate-400 dark:text-slate-500" />
-              </div>
-
+              </details>
             </div>
           </div>
         </header>
 
-        {/* Dashboard Content */}
-        <main className="flex-1 px-8 pb-12 pt-4">
-          <div className="mx-auto max-w-7xl">
-            {children}
-          </div>
+        <main className="flex-1 px-4 pb-12 pt-4 sm:px-8">
+          <div className="mx-auto max-w-7xl">{children}</div>
         </main>
       </div>
     </div>

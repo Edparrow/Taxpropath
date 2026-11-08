@@ -1,5 +1,5 @@
 /**
- * Card cover art. Files live in public/webinars/ and are listed here rather than
+ * Card cover art. Files live in public/courses/ and are listed here rather than
  * discovered on disk: the dev server is launched with `--prefix`, so its cwd is
  * not the app root and a readdir probe would silently find nothing.
  *
@@ -8,14 +8,14 @@
  * image instead of falling back to the gradient.
  */
 
-/** Per-webinar art, keyed by slug. Takes precedence over the rotation. */
+/** Per-course art, keyed by slug. Takes precedence over the rotation. */
 const BY_SLUG: Record<string, string> = {};
 
 /** Generic covers, assigned in a stable rotation across the catalog. */
 const GENERIC = [
-  "/webinars/cover-1.svg",
-  "/webinars/cover-2.svg",
-  "/webinars/cover-3.svg",
+  "/courses/cover-1.svg",
+  "/courses/cover-2.svg",
+  "/courses/cover-3.svg",
 ];
 
 /** Stable non-negative hash so a slug always lands on the same generic cover. */

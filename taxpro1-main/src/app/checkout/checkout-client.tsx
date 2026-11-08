@@ -2,13 +2,16 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { Info, Loader2, Lock, Tag, X } from "lucide-react";
+import { ExternalLink, Info, Loader2, Lock, Tag, X } from "lucide-react";
 import { useCart } from "@/components/cart-provider";
 import { COUNTRIES } from "@/lib/data/countries";
 import { Field, Input, Select } from "@/components/form";
 import { PaypalCheckout } from "@/components/paypal-checkout";
+import { PortalDialog } from "@/components/portal-dialog";
 import { PageBanner, PillLink } from "@/components/ui";
 import { formatPrice } from "@/lib/utils";
+import { cartLineTotalCents } from "@/lib/types";
+import { PORTAL_URL } from "@/lib/portal";
 
 export function CheckoutClient({
   paypalClientId,
@@ -23,6 +26,7 @@ export function CheckoutClient({
   const [paid, setPaid] = useState<{ orderId: string; captureId: string | null } | null>(
     null,
   );
+  const [portalOpen, setPortalOpen] = useState(false);
 
   const [couponInput, setCouponInput] = useState("");
   const [applying, setApplying] = useState(false);
@@ -77,6 +81,7 @@ export function CheckoutClient({
   function handlePaid(result: { orderId: string; captureId: string | null }) {
     clear();
     setPaid(result);
+    setPortalOpen(true); // hand the customer straight to their portal
   }
 
   if (paid) {
@@ -95,8 +100,8 @@ export function CheckoutClient({
               Thank you — your payment was received
             </h2>
             <p className="mt-3 text-[15px] leading-relaxed text-ink-muted">
-              A confirmation has been recorded against your order. We&rsquo;ll email
-              your webinar access details shortly.
+              Your order is confirmed and listed under My Orders. Your purchase is ready in your
+              portal — sign in there with your purchase email.
             </p>
             <dl className="mt-8 rounded-2xl bg-cream px-6 py-5 text-left">
               <div className="flex justify-between gap-4 text-[14px]">
@@ -114,11 +119,22 @@ export function CheckoutClient({
                 </div>
               )}
             </dl>
-            <div className="mt-8 flex justify-center">
-              <PillLink href="/webinar/upcoming">Browse More Webinars</PillLink>
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <a
+                href={PORTAL_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full bg-brand-gradient px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-brand-600/25 transition-transform duration-200 hover:-translate-y-0.5"
+              >
+                Open My Portal
+                <ExternalLink className="size-4" aria-hidden />
+              </a>
+              <PillLink href="/account/orders">Go to My Account</PillLink>
+              <PillLink href="/courses">Browse More Courses</PillLink>
             </div>
           </div>
         </section>
+        <PortalDialog open={portalOpen} onClose={() => setPortalOpen(false)} />
       </>
     );
   }
@@ -142,10 +158,10 @@ export function CheckoutClient({
                 Nothing to check out
               </h2>
               <p className="mt-2 text-[15px] text-ink-muted">
-                Add a webinar to your cart first.
+                Add a course to your cart first.
               </p>
               <div className="mt-8 flex justify-center">
-                <PillLink href="/webinar/upcoming">Browse Webinars</PillLink>
+                <PillLink href="/courses">Browse Courses</PillLink>
               </div>
             </div>
           ) : (
@@ -228,20 +244,28 @@ export function CheckoutClient({
                 <h2 className="text-lg font-extrabold text-navy-950">Order Summary</h2>
                 <ul className="mt-6 space-y-4 border-b border-navy-950/10 pb-6">
                   {lines.map((line) => (
-                    <li key={line.optionId} className="flex justify-between gap-4">
+                    <li key={line.courseSlug} className="flex justify-between gap-4">
                       <div>
                         <Link
-                          href={`/webinar/${line.webinarSlug}`}
+                          href={`/courses/${line.courseSlug}`}
                           className="text-[14px] font-semibold leading-snug text-navy-950 hover:text-brand-700"
                         >
                           {line.title}
                         </Link>
                         <p className="mt-0.5 text-[12.5px] text-ink-muted">
-                          {line.optionLabel} × {line.quantity}
+                          Self-Study ({formatPrice(line.basePriceCents)})
                         </p>
+                        {line.addons.map((addon) => (
+                          <p
+                            key={addon.code}
+                            className="mt-0.5 pl-3 text-[12.5px] text-ink-muted"
+                          >
+                            + {addon.label} ({formatPrice(addon.priceCents)})
+                          </p>
+                        ))}
                       </div>
                       <p className="shrink-0 text-[14px] font-bold tabular-nums text-navy-950">
-                        {formatPrice(line.unitPriceCents * line.quantity)}
+                        {formatPrice(cartLineTotalCents(line))}
                       </p>
                     </li>
                   ))}

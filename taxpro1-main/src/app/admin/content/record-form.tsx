@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import type { Resource } from "@/lib/admin/resources";
 import { saveRecord } from "./actions";
+import { ImageField } from "./image-field";
 
 const INPUT =
   "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-[14.5px] text-navy-950 outline-none transition-colors duration-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25";
@@ -129,6 +130,13 @@ export function RecordForm({
                       </option>
                     ))}
                   </select>
+                ) : field.type === "url" && field.upload ? (
+                  <ImageField
+                    resourceSlug={resource.slug}
+                    name={field.name}
+                    required={field.required}
+                    defaultValue={String(value ?? "")}
+                  />
                 ) : (
                   <input
                     id={field.name}
@@ -168,7 +176,7 @@ function Submit() {
     <button
       type="submit"
       disabled={pending}
-      className="flex cursor-pointer items-center gap-2 rounded-full bg-brand-600 px-6 py-2.5 text-[14px] font-bold text-white transition-transform duration-200 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+      className="flex cursor-pointer items-center gap-2 rounded-full bg-brand-gradient shadow-md shadow-brand-600/20 px-6 py-2.5 text-[14px] font-bold text-white transition-transform duration-200 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
     >
       {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
       {pending ? "Saving…" : "Save"}

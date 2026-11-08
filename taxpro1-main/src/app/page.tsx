@@ -9,14 +9,14 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { getFeatured } from "@/lib/data/catalog";
+import { getFeaturedCourses } from "@/lib/data/catalog";
 import {
   getBanners,
   getBrands,
   getIndustries,
   getTestimonials,
 } from "@/lib/data/site-content";
-import { WebinarCard } from "@/components/webinar-card";
+import { CourseCard } from "@/components/course-card";
 import { IndustryIcon } from "@/components/industry-icon";
 import { Reveal } from "@/components/reveal";
 import { TypingRevealCards } from "@/components/typing-reveal-cards";
@@ -41,9 +41,9 @@ const PLANS = [
     price: "$199",
     unit: "/ year",
     features: [
-      { label: "Webinar as per your requirements", included: true },
+      { label: "Courses as per your requirements", included: true },
       { label: "5000+ hours of approved CPE courses", included: true },
-      { label: "Unlimited LIVE & on-demand webinars", included: true },
+      { label: "Unlimited self-study courses", included: true },
       { label: "Automated CPE/CE credit tracking", included: true },
       { label: "Downloadable e-Transcripts", included: true },
       { label: "One-on-one mentorship", included: false },
@@ -72,7 +72,7 @@ const PLANS = [
 
 export default async function HomePage() {
   const [featured, industryRows, banners, testimonials, brands] = await Promise.all([
-    getFeatured(3),
+    getFeaturedCourses(3),
     getIndustries(),
     getBanners(),
     getTestimonials(),
@@ -80,34 +80,31 @@ export default async function HomePage() {
   ]);
 
   const industries = industryRows.length ? industryRows : FALLBACK_INDUSTRIES;
+  // The first banner that has an image is the hero; the rest are promo cards.
+  const hero = banners.find((b) => b.image_url);
+  const promos = banners.filter((b) => b !== hero);
 
   return (
     <>
       {/* ---------------------------------------------------------------- hero */}
-      {/* Admin-managed via Content > Banners (the "banners" resource is
-          documented as "hero slides shown at the top of the homepage").
-          The first published banner becomes the hero image; falls back to
-          the bundled image until one exists. Heading/icons/buttons are
-          pixels baked into the image itself, not real elements — whatever
-          image is used, its buttons won't be clickable. */}
-      <section className="relative bg-cream">
-        {banners[0]?.image_url ? (
-          // Admin-supplied URLs can be any host, so this stays a plain <img>
-          // rather than next/image, which needs configured domains.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={banners[0].image_url} alt={banners[0].title} className="h-auto w-full" />
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src="/herosection/slider_1__.webp"
-            alt="A presenter leads a live CPE webinar on tax planning strategies for a room of remote participants"
-            className="h-auto w-full"
-          />
-        )}
-        <div className="absolute bottom-[6%] left-[4%]">
-          <PillLink href="/webinar/upcoming">Browse Webinars</PillLink>
-        </div>
-      </section>
+      {/* Comes only from the database (Admin > Content > Banners): the first
+          published banner with an image is the hero, and its button label/link
+          are the banner's own. Nothing is hard-coded — with no banner, the
+          hero simply isn't rendered. Any heading or icons drawn inside the
+          image are just pixels, so only the real button below is clickable. */}
+      {hero?.image_url && (
+        <section className="relative bg-cream">
+          {/* Admin-supplied URLs can be any host, so this stays a plain <img>
+              rather than next/image, which needs configured domains. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={hero.image_url} alt={hero.title} className="h-auto w-full" />
+          {hero.cta_label && hero.cta_href && (
+            <div className="absolute bottom-[6%] left-[4%]">
+              <PillLink href={hero.cta_href}>{hero.cta_label}</PillLink>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* ---------------------------------------------------------- industries */}
       <section className="border-y border-slate-200 bg-white">
@@ -142,13 +139,13 @@ export default async function HomePage() {
       </section>
 
       {/* -------------------------------------------------------- promo banners */}
-      {/* Admin-managed; banners[0] became the hero above, so only the rest
+      {/* Admin-managed; the hero banner above is excluded, so only the rest
           (if any) show here. Absent entirely until a second banner exists. */}
-      {banners.length > 1 && (
+      {promos.length > 0 && (
         <section className="bg-white">
           <div className="mx-auto max-w-7xl px-4 pt-16 sm:px-6 lg:px-8">
             <ul className="grid gap-6 lg:grid-cols-2">
-              {banners.slice(1).map((banner) => (
+              {promos.map((banner) => (
                 <li
                   key={banner.id}
                   className="relative overflow-hidden rounded-3xl bg-brand-gradient px-8 py-10"
@@ -198,14 +195,14 @@ export default async function HomePage() {
               accent="at a fraction of the price"
               className="max-w-2xl"
             />
-            <PillLink href="/webinar/upcoming" variant="dark">
+            <PillLink href="/courses" variant="dark">
               View All
             </PillLink>
           </div>
 
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {featured.map((webinar, i) => (
-              <WebinarCard key={webinar.slug} webinar={webinar} position={i} />
+            {featured.map((course, i) => (
+              <CourseCard key={course.slug} course={course} position={i} />
             ))}
           </div>
         </div>
@@ -403,7 +400,7 @@ export default async function HomePage() {
                 {
                   name: "David Whitfield",
                   title: "Enrolled Agent, IRS Rep.",
-                  bio: "Represents clients before the IRS and teaches audit-defense webinars.",
+                  bio: "Represents clients before the IRS and teaches audit-defense courses.",
                 },
               ]}
             />

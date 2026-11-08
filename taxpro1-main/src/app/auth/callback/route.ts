@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { safeNextPath } from "@/lib/next-path";
+import { welcomeNewCustomer } from "@/lib/customer-journey";
 
 /**
  * Landing point for the links Supabase emails out — signup confirmation and
@@ -34,16 +35,22 @@ export async function GET(request: Request) {
   const supabase = await createClient();
 
   if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) return NextResponse.redirect(`${origin}${next}`);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) {
+      welcomeOnce(data.user?.id);
+      return NextResponse.redirect(`${origin}${next}`);
+    }
     return NextResponse.redirect(
       `${origin}/login?error=${encodeURIComponent(error.message)}`,
     );
   }
 
   if (tokenHash && type) {
-    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
-    if (!error) return NextResponse.redirect(`${origin}${next}`);
+    const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+    if (!error) {
+      welcomeOnce(data.user?.id);
+      return NextResponse.redirect(`${origin}${next}`);
+    }
     return NextResponse.redirect(
       `${origin}/login?error=${encodeURIComponent(error.message)}`,
     );
@@ -54,4 +61,9 @@ export async function GET(request: Request) {
       "That confirmation link is incomplete. Request a new one below.",
     )}`,
   );
+}
+
+/** A confirmed sign-up gets its welcome email (only ever once per account). */
+function welcomeOnce(userId: string | undefined) {
+  if (userId) after(() => welcomeNewCustomer(userId));
 }

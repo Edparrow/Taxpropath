@@ -8,6 +8,7 @@
 export function safeNextPath(value: string | null | undefined, fallback = "/"): string {
   if (!value) return fallback;
   // Reject protocol-relative ("//evil.com") and absolute ("https://evil.com") URLs.
-  if (!value.startsWith("/") || value.startsWith("//")) return fallback;
+  // Browsers also read "/\evil.com" as "//evil.com".
+  if (!value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) return fallback;
   return value;
 }

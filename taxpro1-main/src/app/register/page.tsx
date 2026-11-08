@@ -16,7 +16,8 @@ import {
 import { authErrorMessage } from "@/lib/auth-errors";
 import { safeNextPath } from "@/lib/next-path";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { PageBanner } from "@/components/ui";
+import { AuthShell } from "@/components/auth-shell";
+import { welcomeAfterSignup } from "./actions";
 
 /** Where Supabase should send the confirmation link back to. */
 function callbackUrl(next: string) {
@@ -62,6 +63,8 @@ function RegisterForm() {
       options: {
         emailRedirectTo: callbackUrl(next),
         data: {
+          // Marks the sign-up as this site's: the login database is shared.
+          site: "taxpropath",
           first_name: String(form.get("first_name")),
           last_name: String(form.get("last_name")),
           phone: String(form.get("phone")),
@@ -89,6 +92,7 @@ function RegisterForm() {
      * your email" screen would leave the user waiting for nothing.
      */
     if (data.session) {
+      void welcomeAfterSignup().catch(() => {});
       router.push(next);
       router.refresh();
       return;
@@ -120,229 +124,208 @@ function RegisterForm() {
 
   if (done) {
     return (
-      <>
-        <PageBanner
-          title="Check your email"
-          crumb={[
-            { href: "/", label: "Home" },
-            { href: "/register", label: "Register" },
-          ]}
-        />
-        <section className="bg-white">
-          <div className="mx-auto max-w-md px-4 py-20 text-center sm:px-6">
-            <h2 className="text-2xl font-extrabold text-navy-950">
-              Confirm your account
-            </h2>
-            <p className="mt-3 text-[15px] leading-relaxed text-ink-muted">
-              We&rsquo;ve sent a confirmation link to{" "}
-              <span className="font-semibold text-navy-950">{email}</span>. Click it to
-              activate your Taxpropath account.
-            </p>
+      <AuthShell word="Verify" tagline="One last step: confirm your email address to activate your account.">
+        <div className="text-center lg:text-left">
+          <h2 className="text-3xl font-extrabold tracking-tight text-navy-950">
+            Confirm your account
+          </h2>
+          <p className="mt-3 text-[15px] leading-relaxed text-ink-muted">
+            We&rsquo;ve sent a confirmation link to{" "}
+            <span className="font-semibold text-navy-950">{email}</span>. Click it to
+            activate your Taxpropath account.
+          </p>
 
-            {(resendNotice || resendError) && (
-              <div className="mt-6 text-left">
-                <FormAlert tone={resendError ? "error" : "success"}>
-                  {resendError ?? resendNotice}
-                </FormAlert>
-              </div>
-            )}
+          {(resendNotice || resendError) && (
+            <div className="mt-6 text-left">
+              <FormAlert tone={resendError ? "error" : "success"}>
+                {resendError ?? resendNotice}
+              </FormAlert>
+            </div>
+          )}
 
-            <p className="mt-8 text-[14.5px] text-ink-muted">
-              Didn&rsquo;t get it?{" "}
-              <button
-                type="button"
-                onClick={handleResend}
-                disabled={resending}
-                className="cursor-pointer font-bold text-brand-700 underline underline-offset-2 transition-colors duration-200 hover:text-brand-800 disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
-              >
-                {resending ? "Sending…" : "Resend confirmation"}
-              </button>
-            </p>
-
-            <Link
-              href="/login"
-              className="mt-8 inline-block rounded-full bg-brand-gradient px-8 py-3 text-sm font-bold text-white"
+          <p className="mt-8 text-[14.5px] text-ink-muted">
+            Didn&rsquo;t get it?{" "}
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={resending}
+              className="cursor-pointer font-bold text-brand-700 underline underline-offset-2 transition-colors duration-200 hover:text-brand-800 disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
             >
-              Back to Login
-            </Link>
-          </div>
-        </section>
-      </>
+              {resending ? "Sending…" : "Resend confirmation"}
+            </button>
+          </p>
+
+          <Link
+            href="/login"
+            className="mt-8 inline-block rounded-full bg-brand-gradient px-8 py-3 text-sm font-bold text-white"
+          >
+            Back to Login
+          </Link>
+        </div>
+      </AuthShell>
     );
   }
 
   return (
-    <>
-      <PageBanner
-        title="Register"
-        crumb={[
-          { href: "/", label: "Home" },
-          { href: "/register", label: "Register" },
-        ]}
-      />
-
-      <section className="bg-white">
-        <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
-          <form
-            onSubmit={handleSubmit}
-            className="rounded-3xl border border-slate-200 p-8 sm:p-10"
+    <AuthShell
+      word="Register"
+      tagline="Create your free account to buy self-study CPE courses and keep every order in one place."
+      wide
+    >
+      <form onSubmit={handleSubmit}>
+        <h2 className="text-3xl font-extrabold tracking-tight text-navy-950">
+          Create your account
+        </h2>
+        <p className="mt-2 text-[15px] text-ink-muted">
+          Already have an account?{" "}
+          <Link
+            href={`/login?next=${encodeURIComponent(next)}`}
+            className="font-bold text-brand-700 hover:underline"
           >
-            <h2 className="text-xl font-extrabold text-navy-950">
-              Create your account
-            </h2>
+            Login
+          </Link>
+        </p>
 
-            {!isSupabaseConfigured() && (
-              <div className="mt-6">
-                <SupabaseNotice />
-              </div>
-            )}
+        {!isSupabaseConfigured() && (
+          <div className="mt-6">
+            <SupabaseNotice />
+          </div>
+        )}
 
-            <div className="mt-8 grid gap-5 sm:grid-cols-2">
-              <Field label="First Name" htmlFor="first_name" required>
-                <Input
-                  id="first_name"
-                  name="first_name"
-                  required
-                  autoComplete="given-name"
-                />
-              </Field>
-              <Field label="Last Name" htmlFor="last_name" required>
-                <Input
-                  id="last_name"
-                  name="last_name"
-                  required
-                  autoComplete="family-name"
-                />
-              </Field>
-              <Field label="E-Mail" htmlFor="email" required>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  autoComplete="email"
-                />
-              </Field>
-              <Field label="Telephone" htmlFor="phone" required>
-                <Input id="phone" name="phone" type="tel" required autoComplete="tel" />
-              </Field>
-              <Field
-                label="Password"
-                htmlFor="password"
-                required
-                hint="At least 8 characters."
-              >
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  minLength={8}
-                  autoComplete="new-password"
-                />
-              </Field>
-              <Field label="Confirm Password" htmlFor="confirm_password" required>
-                <Input
-                  id="confirm_password"
-                  name="confirm_password"
-                  type="password"
-                  required
-                  minLength={8}
-                  autoComplete="new-password"
-                />
-              </Field>
-            </div>
-
-            <h3 className="mt-10 text-lg font-extrabold text-navy-950">Your Address</h3>
-            <div className="mt-6 grid gap-5 sm:grid-cols-2">
-              <Field label="Company" htmlFor="company" className="sm:col-span-2">
-                <Input id="company" name="company" autoComplete="organization" />
-              </Field>
-              <Field
-                label="Address 1"
-                htmlFor="address1"
-                required
-                className="sm:col-span-2"
-              >
-                <Input
-                  id="address1"
-                  name="address1"
-                  required
-                  autoComplete="address-line1"
-                />
-              </Field>
-              <Field label="Address 2" htmlFor="address2" className="sm:col-span-2">
-                <Input id="address2" name="address2" autoComplete="address-line2" />
-              </Field>
-              <Field label="City" htmlFor="city" required>
-                <Input id="city" name="city" required autoComplete="address-level2" />
-              </Field>
-              <Field label="ZIP code" htmlFor="zip" required>
-                <Input id="zip" name="zip" required autoComplete="postal-code" />
-              </Field>
-              <Field
-                label="PTIN Number"
-                htmlFor="ptin"
-                hint="Required if you need IRS credits."
-              >
-                <Input id="ptin" name="ptin" />
-              </Field>
-              <Field label="Country" htmlFor="country" required>
-                <Select
-                  id="country"
-                  name="country"
-                  required
-                  defaultValue=""
-                  autoComplete="country-name"
-                >
-                  <option value="" disabled>
-                    --select country--
-                  </option>
-                  {COUNTRIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-              <Field
-                label="Region / State"
-                htmlFor="region"
-                required
-                className="sm:col-span-2"
-              >
-                <Input
-                  id="region"
-                  name="region"
-                  required
-                  autoComplete="address-level1"
-                />
-              </Field>
-            </div>
-
-            {error && (
-              <div className="mt-8">
-                <FormAlert tone="error">{error}</FormAlert>
-              </div>
-            )}
-
-            <div className="mt-8">
-              <SubmitButton pending={pending}>Create Account</SubmitButton>
-            </div>
-
-            <p className="mt-6 text-center text-[14.5px] text-ink-muted">
-              Already have an account?{" "}
-              <Link
-                href={`/login?next=${encodeURIComponent(next)}`}
-                className="font-bold text-brand-700 hover:underline"
-              >
-                Login
-              </Link>
-            </p>
-          </form>
+        <div className="mt-8 grid gap-5 sm:grid-cols-2">
+          <Field label="First Name" htmlFor="first_name" required>
+            <Input
+              id="first_name"
+              name="first_name"
+              required
+              autoComplete="given-name"
+            />
+          </Field>
+          <Field label="Last Name" htmlFor="last_name" required>
+            <Input
+              id="last_name"
+              name="last_name"
+              required
+              autoComplete="family-name"
+            />
+          </Field>
+          <Field label="E-Mail" htmlFor="email" required>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+            />
+          </Field>
+          <Field label="Telephone" htmlFor="phone" required>
+            <Input id="phone" name="phone" type="tel" required autoComplete="tel" />
+          </Field>
+          <Field
+            label="Password"
+            htmlFor="password"
+            required
+            hint="At least 8 characters."
+          >
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              required
+              minLength={8}
+              autoComplete="new-password"
+            />
+          </Field>
+          <Field label="Confirm Password" htmlFor="confirm_password" required>
+            <Input
+              id="confirm_password"
+              name="confirm_password"
+              type="password"
+              required
+              minLength={8}
+              autoComplete="new-password"
+            />
+          </Field>
         </div>
-      </section>
-    </>
+
+        <h3 className="mt-10 text-lg font-extrabold text-navy-950">Your Address</h3>
+        <div className="mt-6 grid gap-5 sm:grid-cols-2">
+          <Field label="Company" htmlFor="company" className="sm:col-span-2">
+            <Input id="company" name="company" autoComplete="organization" />
+          </Field>
+          <Field
+            label="Address 1"
+            htmlFor="address1"
+            required
+            className="sm:col-span-2"
+          >
+            <Input
+              id="address1"
+              name="address1"
+              required
+              autoComplete="address-line1"
+            />
+          </Field>
+          <Field label="Address 2" htmlFor="address2" className="sm:col-span-2">
+            <Input id="address2" name="address2" autoComplete="address-line2" />
+          </Field>
+          <Field label="City" htmlFor="city" required>
+            <Input id="city" name="city" required autoComplete="address-level2" />
+          </Field>
+          <Field label="ZIP code" htmlFor="zip" required>
+            <Input id="zip" name="zip" required autoComplete="postal-code" />
+          </Field>
+          <Field
+            label="PTIN Number"
+            htmlFor="ptin"
+            hint="Required if you need IRS credits."
+          >
+            <Input id="ptin" name="ptin" />
+          </Field>
+          <Field label="Country" htmlFor="country" required>
+            <Select
+              id="country"
+              name="country"
+              required
+              defaultValue=""
+              autoComplete="country-name"
+            >
+              <option value="" disabled>
+                --select country--
+              </option>
+              {COUNTRIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field
+            label="Region / State"
+            htmlFor="region"
+            required
+            className="sm:col-span-2"
+          >
+            <Input
+              id="region"
+              name="region"
+              required
+              autoComplete="address-level1"
+            />
+          </Field>
+        </div>
+
+        {error && (
+          <div className="mt-8">
+            <FormAlert tone="error">{error}</FormAlert>
+          </div>
+        )}
+
+        <div className="mt-8">
+          <SubmitButton pending={pending}>Create Account</SubmitButton>
+        </div>
+      </form>
+    </AuthShell>
   );
 }
 

@@ -4,10 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-auth";
+import { logActivity } from "@/lib/admin/activity";
 
 /**
  * Writes go through the caller's own session — "admins manage coupons" RLS
- * (0007_admin_expansion.sql) is the real lock, requireAdmin is defence in
+ * (0001_initial_schema.sql) is the real lock, requireAdmin is defence in
  * depth. There is deliberately no public read policy on this table: coupon
  * validation at checkout goes through /api/coupon (service role), not a
  * client-side table read, so a visitor's browser can never list every code.
@@ -30,7 +31,7 @@ export async function saveCoupon(
   _prev: unknown,
   form: FormData,
 ): Promise<Result> {
-  await requireAdmin();
+  const admin = await requireAdmin("coupons", "edit");
 
   const code = String(form.get("code") ?? "").trim().toUpperCase();
   if (!code) return { error: "Code is required." };
@@ -69,19 +70,26 @@ export async function saveCoupon(
     if (error) return { error: humanise(error.message) };
   }
 
+  await logActivity(admin, couponId ? "UPDATE_COUPON" : "CREATE_COUPON", `${couponId ? "Updated" : "Created"} coupon ${code}.`);
   revalidatePath("/admin/coupons");
   redirect("/admin/coupons");
 }
 
 export async function deleteCoupon(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin("coupons", "edit");
   const supabase = await createClient();
 
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 
-  const { error } = await supabase.from("coupons").delete().eq("id", id);
+  const { data: deleted, error } = await supabase
+    .from("coupons")
+    .delete()
+    .eq("id", id)
+    .select("code")
+    .maybeSingle();
   if (error) console.error("[admin] coupon delete failed", error);
+  if (deleted) await logActivity(admin, "DELETE_COUPON", `Deleted coupon ${deleted.code}.`);
 
   revalidatePath("/admin/coupons");
 }

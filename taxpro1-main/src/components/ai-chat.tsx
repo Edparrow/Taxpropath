@@ -11,14 +11,14 @@ interface ChatMessage {
 
 const SAMPLE_RESPONSES = [
   {
-    keywords: ["webinar", "course", "class"],
+    keywords: ["webinar", "course", "class", "self-study"],
     response:
-      "You can browse all our webinars on the Upcoming Webinars page (/webinar/upcoming). We also have Pre-recorded webinars (/webinar/pre-recorded) available for on-demand learning.",
+      "You can browse all our self-study courses on the Courses page (/courses). Learn at your own pace, with optional e-Transcripts and slides.",
   },
   {
     keywords: ["price", "cost", "pricing"],
     response:
-      "We offer flexible pricing:\n• Single Session: $169/webinar\n• Annual Unlimited: $199/year (includes 5000+ hours of CPE)\n• Team & Enterprise: Custom pricing\n\nVisit our home page (/) to see all plans.",
+      "We offer flexible pricing:\n• Self-Study Course: priced per course (see /courses)\n• Annual Unlimited: $199/year (includes 5000+ hours of CPE)\n• Team & Enterprise: Custom pricing\n\nVisit our home page (/) to see all plans.",
   },
   {
     keywords: ["register", "account", "signup"],
@@ -28,12 +28,12 @@ const SAMPLE_RESPONSES = [
   {
     keywords: ["tax", "taxation", "banking"],
     response:
-      "We have extensive offerings in Banking & Taxation. Check our webinars page (/webinar/upcoming) for courses on tax planning, IRA strategies, and more.",
+      "We have extensive offerings in Banking & Taxation. Check our Courses page (/courses) for courses on tax planning, IRA strategies, and more.",
   },
   {
     keywords: ["housing", "construction"],
     response:
-      "Our Housing & Taxation track covers courses relevant to construction and real estate tax professionals. Browse all webinars (/webinar/upcoming) to find courses in this category.",
+      "Our Housing & Taxation track covers courses relevant to construction and real estate tax professionals. Browse all courses (/courses) to find courses in this category.",
   },
   {
     keywords: ["contact", "support", "help"],
@@ -48,7 +48,7 @@ const SAMPLE_RESPONSES = [
   {
     keywords: ["cpe", "credit", "certificate"],
     response:
-      "All our webinars are approved for CPE/CE credits. You'll receive a certificate of completion with each course. Our Annual Unlimited plan includes automated CPE credit tracking.",
+      "Our self-study courses carry CPE/CE credits. You'll receive your certificate through your portal after completing each course. Our Annual Unlimited plan includes automated CPE credit tracking.",
   },
 ];
 
@@ -76,7 +76,7 @@ export function AIChat() {
       }
     }
 
-    return `I can help you navigate Taxpropath! Here are some things you can ask me about:\n• Browse webinars and courses\n• Learn about pricing and plans\n• Create an account\n• Find courses in specific industries (Tax, Housing & Taxation, Leadership)\n• Get information about CPE credits\n• Contact us\n\nFeel free to ask me anything about navigating the platform!`;
+    return `I can help you navigate Taxpropath! Here are some things you can ask me about:\n• Browse self-study courses\n• Learn about pricing and plans\n• Create an account\n• Find courses in specific industries (Tax, Housing & Taxation, Leadership)\n• Get information about CPE credits\n• Contact us\n\nFeel free to ask me anything about navigating the platform!`;
   };
 
   const handleSendMessage = () => {
@@ -144,7 +144,7 @@ export function AIChat() {
             <div className="text-center">
               <MessageCircle className="mx-auto size-12 text-brand-300 mb-2" />
               <p className="text-sm font-medium text-navy-950">Hi! I&rsquo;m your Taxpropath Assistant</p>
-              <p className="text-xs text-slate-500 mt-1">Ask me anything about our webinars and courses</p>
+              <p className="text-xs text-slate-500 mt-1">Ask me anything about our self-study courses</p>
             </div>
           </div>
         )}

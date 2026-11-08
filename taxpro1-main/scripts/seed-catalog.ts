@@ -1,17 +1,18 @@
 /**
- * One-off: copies the hand-transcribed catalog in src/lib/data/webinars.ts into
- * Supabase so it becomes editable from the admin panel.
+ * One-off: copies the sample self-study courses in src/lib/data/sample-courses.ts
+ * into Supabase so they become editable from the admin panel.
  *
  *   npx tsx scripts/seed-catalog.ts
  *
  * Idempotent — re-running updates existing rows rather than duplicating them.
+ * Meant for development databases: the add-on prices are placeholders.
  */
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
-import { WEBINARS } from "../src/lib/data/webinars";
+import { SAMPLE_COURSES } from "../src/lib/data/sample-courses";
 
 // .env.local isn't loaded outside Next, so parse it directly.
-for (const line of readFileSync(".env.local", "utf8").split("\n")) {
+for (const line of readFileSync(".env.local", "utf8").split(/\r?\n/)) {
   const m = line.match(/^([A-Z_]+)=(.*)$/);
   if (m && !process.env[m[1]]) process.env[m[1]] = m[2].trim();
 }
@@ -19,6 +20,8 @@ for (const line of readFileSync(".env.local", "utf8").split("\n")) {
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!url || !key) throw new Error("Supabase env vars missing");
+
+console.log(`Seeding ${url}\n`);
 
 const db = createClient(url, key, { auth: { persistSession: false } });
 
@@ -28,39 +31,9 @@ const slugify = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-/*
- * Placeholder recordings so the video surfaces aren't empty before real footage
- * is uploaded. Blender Foundation open movies — Creative Commons licensed and
- * long-lived, so the embeds won't rot. Replace them from the admin panel.
- */
-const DEMO_VIDEOS = [
-  "https://www.youtube.com/watch?v=aqz-KE-bpKQ", // Big Buck Bunny
-  "https://www.youtube.com/watch?v=eRsGyueVLvQ", // Sintel
-  "https://www.youtube.com/watch?v=R6MlUcmOul8", // Tears of Steel
-  "https://www.youtube.com/watch?v=TLkA0RELQ1g", // Elephants Dream
-  "https://www.youtube.com/watch?v=Y-rmzh0PI3c", // Cosmos Laundromat
-];
-
-/**
- * The video columns arrive in migration 0005. Probe for them so the catalog can
- * still be seeded before that migration is applied, rather than failing outright.
- */
-async function hasVideoColumns(): Promise<boolean> {
-  const { error } = await db.from("webinars").select("video_url").limit(1);
-  return !error;
-}
-
 async function main() {
-  const withVideo = await hasVideoColumns();
-  if (!withVideo) {
-    console.warn(
-      "! migration 0005 not applied — seeding without video fields.\n" +
-        "  Run supabase/migrations/0005_admin.sql, then re-run this script.\n",
-    );
-  }
-
   // ---------------------------------------------------------- presenters
-  const names = [...new Set(WEBINARS.map((w) => w.presenter))].filter(Boolean);
+  const names = [...new Set(SAMPLE_COURSES.map((c) => c.presenter))].filter(Boolean);
   const presenterIds = new Map<string, string>();
 
   for (const name of names) {
@@ -84,46 +57,37 @@ async function main() {
   }
   console.log(`presenters: ${presenterIds.size}`);
 
-  // ------------------------------------------------------------ webinars
-  for (const [index, w] of WEBINARS.entries()) {
-    // Every webinar gets a demo recording so no video surface is ever empty.
-    const demoUrl = DEMO_VIDEOS[index % DEMO_VIDEOS.length];
-
+  // ------------------------------------------------------------- courses
+  for (const c of SAMPLE_COURSES) {
     const row = {
-      ...(withVideo && { video_url: demoUrl, video_status: "ready" }),
-      slug: w.slug,
-      title: w.title,
-      kind: w.kind,
-      presenter_id: presenterIds.get(w.presenter) ?? null,
-      event_at: w.eventAt,
-      duration_mins: w.durationMins,
-      product_code: w.productCode,
-      description: w.description.join("\n\n"),
-      learning_objectives: w.learningObjectives,
-      topics_covered: w.topicsCovered,
-      who_should_attend: w.whoShouldAttend,
-      cpe_credit: w.cpeCredit,
-      field_of_study: w.fieldOfStudy,
-      prerequisites: w.prerequisites,
-      learning_level: w.learningLevel,
-      delivery_method: w.deliveryMethod,
-      industry: w.industry,
-      is_featured: w.isFeatured,
-      ...(withVideo && { is_published: true }),
+      slug: c.slug,
+      title: c.title,
+      presenter_id: presenterIds.get(c.presenter) ?? null,
+      description: c.description.join("\n\n"),
+      learning_objectives: c.learningObjectives,
+      topics_covered: c.topicsCovered,
+      who_should_attend: c.whoShouldAttend,
+      cpe_credit: c.cpeCredit,
+      field_of_study: c.fieldOfStudy,
+      prerequisites: c.prerequisites,
+      learning_level: c.learningLevel,
+      is_featured: c.isFeatured,
+      is_published: true,
     };
 
-    const { data: webinar, error } = await db
-      .from("webinars")
+    const { data: course, error } = await db
+      .from("courses")
       .upsert(row, { onConflict: "slug" })
       .select("id")
       .single();
     if (error) throw error;
 
     // Replace pricing wholesale so re-runs don't accumulate stale rows.
-    await db.from("pricing_options").delete().eq("webinar_id", webinar.id);
+    await db.from("pricing_options").delete().eq("course_id", course.id);
     const { error: priceError } = await db.from("pricing_options").insert(
-      w.pricingOptions.map((o, i) => ({
-        webinar_id: webinar.id,
+      c.pricingOptions.map((o, i) => ({
+        course_id: course.id,
+        code: o.code,
         label: o.label,
         description: o.description,
         price_cents: o.priceCents,
@@ -132,13 +96,30 @@ async function main() {
     );
     if (priceError) throw priceError;
 
-    console.log(`  ✓ ${w.slug} (${w.pricingOptions.length} options)`);
+    console.log(`  ✓ ${c.slug}`);
   }
 
   const { count } = await db
-    .from("webinars")
+    .from("courses")
     .select("*", { count: "exact", head: true });
-  console.log(`\ndone — ${count} webinars in Supabase`);
+  console.log(`\ndone — ${count} courses in Supabase`);
+
+  // The homepage hero is read only from the banners table. Give a fresh
+  // database one starting banner; never touch banners an admin already made.
+  const { count: bannerCount } = await db
+    .from("banners")
+    .select("*", { count: "exact", head: true });
+  if (!bannerCount) {
+    const { error: bannerError } = await db.from("banners").insert({
+      title: "Self-study CPE courses for tax professionals",
+      image_url: "/herosection/slider_1__.webp",
+      cta_label: "Browse Courses",
+      cta_href: "/courses",
+      sort_order: 0,
+    });
+    if (bannerError) throw bannerError;
+    console.log("banners: added the starting homepage hero");
+  }
 }
 
 main().catch((err) => {

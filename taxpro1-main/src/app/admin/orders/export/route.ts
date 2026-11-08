@@ -1,57 +1,56 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-auth";
+import { toCsv } from "@/lib/csv";
+import {
+  ORDER_COLUMNS,
+  customerEmail,
+  customerName,
+  orderTotalCents,
+  productsSummary,
+  type OrderRow,
+} from "@/lib/admin/orders";
 
-const FAILED_STATUSES = ["cancelled", "refunded"];
-
-/** Streams the (optionally status-filtered) order list as a CSV download. */
-export async function GET(request: Request) {
-  await requireAdmin();
+/** Completed (paid and refunded) orders as a CSV download. */
+export async function GET() {
+  await requireAdmin("orders");
   const supabase = await createClient();
 
-  const status = new URL(request.url).searchParams.get("status");
-
-  let query = supabase
+  const { data } = await supabase
     .from("orders")
-    .select(
-      `id, status, subtotal_cents, discount_cents, coupon_code, currency, guest_email,
-       paypal_capture_id, paid_at, created_at, billing`,
-    )
-    .order("created_at", { ascending: false });
+    .select(ORDER_COLUMNS)
+    .is("deleted_at", null)
+    .in("status", ["paid", "refunded"])
+    .order("paid_at", { ascending: false });
+  const orders = (data ?? []) as unknown as OrderRow[];
 
-  if (status === "failed") query = query.in("status", FAILED_STATUSES);
-  else if (status && status !== "all") query = query.eq("status", status);
-
-  const { data } = await query;
-  const rows = data ?? [];
-
-  const escape = (value: string) => `"${value.replace(/"/g, '""')}"`;
-
-  const csv = [
-    "order_id,status,subtotal,discount,total,currency,email,coupon,paypal_capture_id,created_at,paid_at",
-    ...rows.map((o) => {
-      const billing = (o.billing ?? {}) as Record<string, string>;
-      const email = o.guest_email ?? billing.email ?? "";
-      const total = (o.subtotal_cents - (o.discount_cents ?? 0)) / 100;
-      return [
-        o.id,
-        o.status,
-        (o.subtotal_cents / 100).toFixed(2),
-        ((o.discount_cents ?? 0) / 100).toFixed(2),
-        total.toFixed(2),
-        o.currency,
-        escape(email),
-        o.coupon_code ?? "",
-        o.paypal_capture_id ?? "",
-        o.created_at,
-        o.paid_at ?? "",
-      ].join(",");
-    }),
-  ].join("\n");
+  const csv = toCsv(
+    [
+      "order_id", "status", "paid_at", "name", "email", "phone", "ptin", "products",
+      "subtotal", "discount", "total", "coupon", "payment", "payment_ref", "remarks",
+    ],
+    orders.map((o) => [
+      o.id,
+      o.status,
+      o.paid_at ?? "",
+      customerName(o),
+      customerEmail(o),
+      o.billing?.phone ?? "",
+      o.billing?.ptin ?? "",
+      productsSummary(o),
+      (o.subtotal_cents / 100).toFixed(2),
+      ((o.discount_cents ?? 0) / 100).toFixed(2),
+      (orderTotalCents(o) / 100).toFixed(2),
+      o.coupon_code ?? "",
+      o.payment_method,
+      o.paypal_capture_id ?? "",
+      o.remarks ?? "",
+    ]),
+  );
 
   return new Response(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="orders.csv"`,
+      "Content-Disposition": `attachment; filename="completed-orders.csv"`,
     },
   });
 }

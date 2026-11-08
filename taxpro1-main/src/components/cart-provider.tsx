@@ -8,7 +8,8 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import type { CartLine } from "@/lib/types";
+import { cartLineTotalCents, type CartLine } from "@/lib/types";
+import { CartSync } from "@/components/cart-sync";
 
 const STORAGE_KEY = "taxpropath.cart";
 const EMPTY: CartLine[] = [];
@@ -19,13 +20,24 @@ const EMPTY: CartLine[] = [];
 let cached: CartLine[] = EMPTY;
 let cachedRaw: string | null = null;
 
+/** Carts saved by older versions of the site have a different shape — drop them. */
+function isCartLine(value: unknown): value is CartLine {
+  const line = value as CartLine;
+  return (
+    typeof line?.courseSlug === "string" &&
+    typeof line.basePriceCents === "number" &&
+    Array.isArray(line.addons)
+  );
+}
+
 function getSnapshot(): CartLine[] {
   if (typeof window === "undefined") return EMPTY;
   const raw = window.localStorage.getItem(STORAGE_KEY);
   if (raw === cachedRaw) return cached;
   cachedRaw = raw;
   try {
-    cached = raw ? JSON.parse(raw) : EMPTY;
+    const parsed: unknown = raw ? JSON.parse(raw) : EMPTY;
+    cached = Array.isArray(parsed) ? parsed.filter(isCartLine) : EMPTY;
   } catch {
     cached = EMPTY;
   }
@@ -56,8 +68,7 @@ type CartContextValue = {
   itemCount: number;
   subtotalCents: number;
   addLine: (line: CartLine) => void;
-  removeLine: (optionId: string) => void;
-  setQuantity: (optionId: string, quantity: number) => void;
+  removeLine: (courseSlug: string) => void;
   clear: () => void;
 };
 
@@ -66,31 +77,14 @@ const CartContext = createContext<CartContextValue | null>(null);
 export function CartProvider({ children }: { children: ReactNode }) {
   const lines = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
+  // One line per course: re-adding replaces it, so a new add-on choice wins.
   const addLine = useCallback((line: CartLine) => {
-    const prev = getSnapshot();
-    const existing = prev.find((l) => l.optionId === line.optionId);
-    writeLines(
-      existing
-        ? prev.map((l) =>
-            l.optionId === line.optionId
-              ? { ...l, quantity: l.quantity + line.quantity }
-              : l,
-          )
-        : [...prev, line],
-    );
+    const rest = getSnapshot().filter((l) => l.courseSlug !== line.courseSlug);
+    writeLines([...rest, line]);
   }, []);
 
-  const removeLine = useCallback((optionId: string) => {
-    writeLines(getSnapshot().filter((l) => l.optionId !== optionId));
-  }, []);
-
-  const setQuantity = useCallback((optionId: string, quantity: number) => {
-    const prev = getSnapshot();
-    writeLines(
-      quantity <= 0
-        ? prev.filter((l) => l.optionId !== optionId)
-        : prev.map((l) => (l.optionId === optionId ? { ...l, quantity } : l)),
-    );
+  const removeLine = useCallback((courseSlug: string) => {
+    writeLines(getSnapshot().filter((l) => l.courseSlug !== courseSlug));
   }, []);
 
   const clear = useCallback(() => writeLines([]), []);
@@ -98,17 +92,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const value = useMemo<CartContextValue>(
     () => ({
       lines,
-      itemCount: lines.reduce((sum, l) => sum + l.quantity, 0),
-      subtotalCents: lines.reduce((sum, l) => sum + l.unitPriceCents * l.quantity, 0),
+      itemCount: lines.length,
+      subtotalCents: lines.reduce((sum, l) => sum + cartLineTotalCents(l), 0),
       addLine,
       removeLine,
-      setQuantity,
       clear,
     }),
-    [lines, addLine, removeLine, setQuantity, clear],
+    [lines, addLine, removeLine, clear],
   );
 
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  return (
+    <CartContext.Provider value={value}>
+      {children}
+      <CartSync lines={lines} />
+    </CartContext.Provider>
+  );
 }
 
 export function useCart() {

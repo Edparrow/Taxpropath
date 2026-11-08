@@ -162,7 +162,17 @@ export function PaypalCheckout({
                     : "Something went wrong with PayPal. Please try again.";
                 setError(message);
               },
-              onCancel: () => setError("Payment cancelled — you have not been charged."),
+              onCancel: (data: { orderID?: string }) => {
+                setError("Payment cancelled — you have not been charged.");
+                // Lets the server send the "registration incomplete" email.
+                if (data?.orderID) {
+                  void fetch("/api/paypal/cancel-order", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ paypalOrderId: data.orderID }),
+                  }).catch(() => {});
+                }
+              },
             })
             .render(buttonsRef.current);
         }

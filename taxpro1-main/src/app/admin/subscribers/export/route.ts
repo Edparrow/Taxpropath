@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 
 /** Streams the subscriber list as a CSV download — mirrors the reference panel's export. */
 export async function GET() {
-  await requireAdmin();
+  await requireAdmin("subscribers");
   const supabase = await createClient();
 
   const { data } = await supabase

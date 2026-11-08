@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-auth";
+import { can, isAdminSection } from "@/lib/admin/permissions";
 import { findResource, RESOURCES } from "@/lib/admin/resources";
 import { RowActions } from "../row-actions";
 
@@ -27,11 +28,11 @@ export default async function ContentListPage({
 }: {
   params: Promise<{ resource: string }>;
 }) {
-  await requireAdmin();
-
   const { resource: slug } = await params;
   const resource = findResource(slug);
-  if (!resource) notFound();
+  if (!resource || !isAdminSection(resource.slug)) notFound();
+  const admin = await requireAdmin(resource.slug);
+  const canEdit = can(admin, resource.slug, "edit");
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -49,13 +50,15 @@ export default async function ContentListPage({
           <h1 className="text-2xl font-extrabold text-navy-950">{resource.plural}</h1>
           <p className="mt-1 text-[14px] text-ink-muted">{resource.description}</p>
         </div>
+        {canEdit && (
         <Link
           href={`/admin/content/${resource.slug}/new`}
-          className="flex shrink-0 items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-[14px] font-bold text-white transition-transform duration-200 hover:-translate-y-0.5"
+          className="flex shrink-0 items-center gap-2 rounded-full bg-brand-gradient shadow-md shadow-brand-600/20 px-5 py-2.5 text-[14px] font-bold text-white transition-transform duration-200 hover:-translate-y-0.5"
         >
           <Plus className="size-4" aria-hidden />
           Create {resource.label.toLowerCase()}
         </Link>
+        )}
       </div>
 
       {error && (
@@ -65,7 +68,7 @@ export default async function ContentListPage({
           <p className="mt-2">
             If the table is missing, apply{" "}
             <code className="font-mono font-semibold">
-              supabase/migrations/0006_site_content.sql
+              supabase/migrations/0001_initial_schema.sql
             </code>
             .
           </p>
@@ -124,12 +127,16 @@ export default async function ContentListPage({
                       {String(row.sort_order ?? 0)}
                     </td>
                     <td className="px-5 py-4">
-                      <RowActions
-                        resourceSlug={resource.slug}
-                        recordId={row.id}
-                        label={primary}
-                        isPublished={Boolean(row.is_published)}
-                      />
+                      {canEdit ? (
+                        <RowActions
+                          resourceSlug={resource.slug}
+                          recordId={row.id}
+                          label={primary}
+                          isPublished={Boolean(row.is_published)}
+                        />
+                      ) : (
+                        <span className="block text-right text-[12.5px] text-ink-muted">View only</span>
+                      )}
                     </td>
                   </tr>
                 );

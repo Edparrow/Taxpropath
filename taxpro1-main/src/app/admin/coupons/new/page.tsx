@@ -19,7 +19,7 @@ const BLANK: CouponFormValues = {
 };
 
 export default async function NewCouponPage() {
-  await requireAdmin();
+  await requireAdmin("coupons", "edit");
 
   return (
     <>

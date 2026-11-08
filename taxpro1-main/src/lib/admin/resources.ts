@@ -1,12 +1,12 @@
 /**
  * Declarative definitions for the admin's content sections.
  *
- * The seven content tables from 0006_site_content.sql are structurally the same
+ * The seven content tables from 0001_initial_schema.sql are structurally the same
  * (sort_order / is_published / created_at + a handful of scalar fields), so one
  * generic list + form + action set drives all of them from this config. Adding a
  * section means adding an entry here and a table in a migration — no new pages.
  *
- * Webinars and orders are deliberately NOT here: they have bespoke screens
+ * Courses and orders are deliberately NOT here: they have bespoke screens
  * (pricing rows, video upload, payment reconciliation) that a generic form
  * can't express.
  */
@@ -34,6 +34,8 @@ export type ResourceField = {
   refTable?: string;
   /** For type "reference": the column shown in the dropdown. */
   refLabelColumn?: string;
+  /** For type "url": also offer a WebP/PNG upload that fills in the link. */
+  upload?: boolean;
 };
 
 export type Resource = {
@@ -74,18 +76,25 @@ export const RESOURCES: Resource[] = [
     table: "banners",
     label: "Banner",
     plural: "Banners",
-    description: "Hero slides shown at the top of the homepage.",
+    description:
+      "The first published banner with an image is the homepage hero; the rest show as promo cards below it.",
     listColumns: ["title", "subtitle"],
     fields: [
       { name: "title", label: "Title", type: "text", required: true },
       { name: "subtitle", label: "Subtitle", type: "textarea" },
-      { name: "image_url", label: "Image URL", type: "url" },
+      {
+        name: "image_url",
+        label: "Image",
+        type: "url",
+        upload: true,
+        hint: "Upload a WebP or PNG (max 5 MB), or paste a link.",
+      },
       { name: "cta_label", label: "Button label", type: "text" },
       {
         name: "cta_href",
         label: "Button link",
         type: "text",
-        hint: "A path such as /webinar/upcoming.",
+        hint: "A path such as /courses.",
       },
     ],
   }),
@@ -94,7 +103,7 @@ export const RESOURCES: Resource[] = [
     table: "categories",
     label: "Category",
     plural: "Categories",
-    description: "Top-level product grouping, e.g. Webinar.",
+    description: "Top-level product grouping, e.g. Taxation.",
     listColumns: ["name", "slug"],
     fields: [
       { name: "name", label: "Name", type: "text", required: true },
@@ -112,7 +121,7 @@ export const RESOURCES: Resource[] = [
     table: "subcategories",
     label: "Subcategory",
     plural: "Subcategories",
-    description: "Sits under a category, e.g. Upcoming Webinar.",
+    description: "Sits under a category, e.g. Federal Tax.",
     listColumns: ["name", "slug"],
     fields: [
       {

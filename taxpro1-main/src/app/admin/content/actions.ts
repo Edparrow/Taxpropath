@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-auth";
+import { isAdminSection } from "@/lib/admin/permissions";
+import { logActivity } from "@/lib/admin/activity";
 import { findResource, slugify, type Resource } from "@/lib/admin/resources";
 
 /**
@@ -76,10 +78,9 @@ export async function saveRecord(
   _prev: unknown,
   form: FormData,
 ): Promise<Result> {
-  await requireAdmin();
-
   const resource = findResource(resourceSlug);
-  if (!resource) return { error: "Unknown content type." };
+  if (!resource || !isAdminSection(resource.slug)) return { error: "Unknown content type." };
+  const admin = await requireAdmin(resource.slug, "edit");
 
   const row = readFields(resource, form);
   const invalid = validate(resource, row);
@@ -104,6 +105,12 @@ export async function saveRecord(
     }
   }
 
+  await logActivity(
+    admin,
+    recordId ? "UPDATE_CONTENT" : "CREATE_CONTENT",
+    `${recordId ? "Updated" : "Created"} ${resource.label.toLowerCase()} "${String(row[resource.listColumns[0]] ?? "")}".`,
+    recordId ? { type: resource.slug, id: recordId } : undefined,
+  );
   revalidatePath(`/admin/content/${resource.slug}`);
   revalidatePath("/");
   redirect(`/admin/content/${resource.slug}`);
@@ -113,10 +120,9 @@ export async function deleteRecord(
   resourceSlug: string,
   recordId: string,
 ): Promise<Result> {
-  await requireAdmin();
-
   const resource = findResource(resourceSlug);
-  if (!resource) return { error: "Unknown content type." };
+  if (!resource || !isAdminSection(resource.slug)) return { error: "Unknown content type." };
+  const admin = await requireAdmin(resource.slug, "edit");
 
   const supabase = await createClient();
   const { error } = await supabase.from(resource.table).delete().eq("id", recordId);
@@ -124,6 +130,10 @@ export async function deleteRecord(
     console.error(`[admin] ${resource.table} delete failed`, error);
     return { error: error.message };
   }
+  await logActivity(admin, "DELETE_CONTENT", `Deleted a ${resource.label.toLowerCase()}.`, {
+    type: resource.slug,
+    id: recordId,
+  });
 
   revalidatePath(`/admin/content/${resource.slug}`);
   revalidatePath("/");
@@ -135,10 +145,9 @@ export async function togglePublished(
   recordId: string,
   next: boolean,
 ): Promise<Result> {
-  await requireAdmin();
-
   const resource = findResource(resourceSlug);
-  if (!resource) return { error: "Unknown content type." };
+  if (!resource || !isAdminSection(resource.slug)) return { error: "Unknown content type." };
+  const admin = await requireAdmin(resource.slug, "edit");
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -149,6 +158,10 @@ export async function togglePublished(
     console.error(`[admin] ${resource.table} publish toggle failed`, error);
     return { error: error.message };
   }
+  await logActivity(admin, next ? "PUBLISH" : "UNPUBLISH", `${next ? "Published" : "Unpublished"} a ${resource.label.toLowerCase()}.`, {
+    type: resource.slug,
+    id: recordId,
+  });
 
   revalidatePath(`/admin/content/${resource.slug}`);
   revalidatePath("/");

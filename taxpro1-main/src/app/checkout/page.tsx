@@ -5,7 +5,7 @@ import { CheckoutClient } from "./checkout-client";
 
 export const metadata: Metadata = {
   title: "Checkout",
-  description: "Complete your Taxpropath webinar purchase.",
+  description: "Complete your Taxpropath course purchase.",
 };
 
 export default async function CheckoutPage() {

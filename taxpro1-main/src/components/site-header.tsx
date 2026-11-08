@@ -4,23 +4,17 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronDown, Menu, ShoppingCart, X } from "lucide-react";
+import { ExternalLink, Menu, ShoppingCart, X } from "lucide-react";
 import { useCart } from "@/components/cart-provider";
-import { AdminLink } from "@/components/admin-link";
 import { AccountMenu } from "@/components/account-menu";
+import { useUser } from "@/components/use-user";
+import { PORTAL_URL } from "@/lib/portal";
 import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/", label: "Home" },
+  { href: "/courses", label: "Courses" },
   { href: "/about-us", label: "About Us" },
-  {
-    href: "/webinar",
-    label: "Webinar",
-    children: [
-      { href: "/webinar/upcoming", label: "Upcoming Webinar" },
-      { href: "/webinar/pre-recorded", label: "Pre Recorded Webinar" },
-    ],
-  },
   { href: "/blog", label: "Blog" },
   { href: "/contact", label: "Contact" },
 ];
@@ -28,6 +22,7 @@ const NAV = [
 export function SiteHeader() {
   const pathname = usePathname();
   const { itemCount } = useCart();
+  const user = useUser();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -56,7 +51,7 @@ export function SiteHeader() {
         <Link href="/" className="shrink-0" aria-label="Taxpropath home">
           <Image
             src="/logo.png"
-            alt="Taxpropath — Accounting &amp; Tax Webinars"
+            alt="Taxpropath — Accounting &amp; Tax CPE Courses"
             width={1024}
             height={318}
             priority
@@ -70,35 +65,6 @@ export function SiteHeader() {
               item.href === "/"
                 ? pathname === "/"
                 : pathname.startsWith(item.href);
-
-            if (item.children) {
-              return (
-                <div key={item.href} className="group relative">
-                  <button
-                    className={cn(
-                      "flex cursor-pointer items-center gap-1 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200",
-                      active
-                        ? "bg-brand-50 text-brand-700"
-                        : "text-ink hover:bg-brand-50 hover:text-brand-700",
-                    )}
-                  >
-                    {item.label}
-                    <ChevronDown className="size-4" aria-hidden />
-                  </button>
-                  <div className="invisible absolute left-0 top-full w-56 translate-y-1 rounded-2xl border border-slate-200/80 bg-white p-2 opacity-0 shadow-xl transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                    {item.children.map((child) => (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        className="block rounded-xl px-4 py-2.5 text-sm font-medium text-ink-muted transition-colors duration-200 hover:bg-brand-50 hover:text-brand-700"
-                      >
-                        {child.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              );
-            }
 
             return (
               <Link
@@ -118,6 +84,19 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2 lg:ml-4">
+          {/* Always shown while signed in — courses play in the portal, not here. */}
+          {user ? (
+            <a
+              href={PORTAL_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden items-center gap-1.5 rounded-full bg-navy-950 px-4 py-2 text-[13px] font-bold text-white transition-colors duration-200 hover:bg-brand-600 sm:inline-flex"
+            >
+              Open My Portal
+              <ExternalLink className="size-3.5" aria-hidden />
+            </a>
+          ) : null}
+
           <Link
             href="/cart"
             className="relative rounded-full p-2.5 text-ink transition-colors duration-200 hover:bg-brand-50 hover:text-brand-700"
@@ -131,7 +110,6 @@ export function SiteHeader() {
             )}
           </Link>
 
-          <AdminLink className="hidden sm:inline-flex" />
 
           <AccountMenu variant="desktop" />
 
@@ -155,37 +133,27 @@ export function SiteHeader() {
               if ((e.target as HTMLElement).closest("a")) setMobileOpen(false);
             }}
           >
-            {NAV.flatMap((item) =>
-              item.children
-                ? [
-                    <p
-                      key={item.href}
-                      className="px-4 pb-1 pt-3 text-xs font-bold uppercase tracking-wider text-slate-400"
-                    >
-                      {item.label}
-                    </p>,
-                    ...item.children.map((c) => (
-                      <Link
-                        key={c.href}
-                        href={c.href}
-                        className="rounded-xl px-4 py-3 text-sm font-semibold text-ink hover:bg-brand-50"
-                      >
-                        {c.label}
-                      </Link>
-                    )),
-                  ]
-                : [
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className="rounded-xl px-4 py-3 text-sm font-semibold text-ink hover:bg-brand-50"
-                    >
-                      {item.label}
-                    </Link>,
-                  ],
-            )}
+            {NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="rounded-xl px-4 py-3 text-sm font-semibold text-ink hover:bg-brand-50"
+              >
+                {item.label}
+              </Link>
+            ))}
             <div className="mt-3 flex flex-col gap-2 border-t border-slate-200 pt-4">
-              <AdminLink className="justify-center" />
+              {user ? (
+                <a
+                  href={PORTAL_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-full bg-navy-950 px-4 py-3 text-sm font-bold text-white"
+                >
+                  Open My Portal
+                  <ExternalLink className="size-4" aria-hidden />
+                </a>
+              ) : null}
               <AccountMenu variant="mobile" />
             </div>
           </nav>

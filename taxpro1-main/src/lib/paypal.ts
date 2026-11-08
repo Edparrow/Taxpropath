@@ -118,7 +118,7 @@ export async function createPaypalOrder(opts: {
       purchase_units: [
         {
           reference_id: opts.referenceId ?? "default",
-          description: "Taxpropath CPE webinars",
+          description: "Taxpropath self-study courses",
           amount: {
             currency_code: currency,
             value: toDecimal(opts.totalCents),

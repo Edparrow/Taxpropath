@@ -1,9 +1,10 @@
+import { reportDbError } from "@/lib/errors/log";
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 /**
- * Reads the admin-managed content tables from 0006_site_content.sql.
+ * Reads the admin-managed content tables from 0001_initial_schema.sql.
  *
  * Every getter returns [] rather than throwing when Supabase isn't configured or
  * the migration hasn't been applied — the public pages fall back to their
@@ -83,7 +84,7 @@ async function published<T>(table: string, columns: string): Promise<T[]> {
 
   if (error) {
     // Missing table is expected before the migration runs; log once and move on.
-    console.warn(`[site-content] ${table} unavailable: ${error.message}`);
+    reportDbError(`Loading ${table}`, error);
     return [];
   }
   return (data ?? []) as unknown as T[];
@@ -136,7 +137,7 @@ export async function getBlogPost(slug: string): Promise<BlogPost | null> {
     .maybeSingle();
 
   if (error) {
-    console.warn(`[site-content] blog_posts unavailable: ${error.message}`);
+    reportDbError("Loading a blog post", error);
     return null;
   }
   return (data as unknown as BlogPost) ?? null;

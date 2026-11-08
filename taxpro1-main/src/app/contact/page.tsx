@@ -52,7 +52,7 @@ export default function ContactPage() {
           <div>
             <SectionHeading lead="Get In" accent="Touch" />
             <p className="mt-6 text-[16.5px] leading-relaxed text-ink-muted">
-              Questions about a webinar, your credits, or a team subscription? Send us
+              Questions about a course, your credits, or a team subscription? Send us
               a message and our team will get back to you.
             </p>
 

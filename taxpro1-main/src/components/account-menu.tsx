@@ -41,6 +41,12 @@ export function AccountMenu({ variant }: { variant: "desktop" | "mobile" }) {
           <p className="truncate px-4 text-[13px] font-semibold text-ink-muted">
             {user.email}
           </p>
+          <Link
+            href="/account"
+            className="rounded-full bg-brand-50 py-2.5 text-center text-sm font-bold text-brand-700"
+          >
+            My Account
+          </Link>
           <button
             type="button"
             onClick={handleSignOut}
@@ -74,10 +80,14 @@ export function AccountMenu({ variant }: { variant: "desktop" | "mobile" }) {
   if (user) {
     return (
       <>
-        <span className="hidden max-w-[12rem] items-center gap-1.5 truncate rounded-full bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 sm:inline-flex">
+        <Link
+          href="/account"
+          title={user.email ?? undefined}
+          className="hidden items-center gap-1.5 rounded-full bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 transition-colors duration-200 hover:bg-brand-100 sm:inline-flex"
+        >
           <UserRound className="size-4 shrink-0" aria-hidden />
-          <span className="truncate">{user.email}</span>
-        </span>
+          My Account
+        </Link>
         <button
           type="button"
           onClick={handleSignOut}

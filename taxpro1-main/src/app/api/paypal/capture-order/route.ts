@@ -1,8 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient, hasServiceRoleKey } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { capturePaypalOrder, isPaypalConfigured } from "@/lib/paypal";
+import { fireOrderDoorbell } from "@/lib/engine";
+import { sendOrderConfirmation, syncPaidOrderToSheet } from "@/lib/customer-journey";
 
 export async function POST(request: Request) {
   if (!isPaypalConfigured() || !isSupabaseConfigured() || !hasServiceRoleKey()) {
@@ -90,6 +92,16 @@ export async function POST(request: Request) {
         { status: 500 },
       );
     }
+
+    // Hurry-up ping to the course engine (join.us-cpe.com). The hourly get_orders pull is the
+    // truth, so a failure here is logged inside and never fails the checkout.
+    await fireOrderDoorbell({ order_id: String(orderId), action: "paid" });
+
+    // Confirmation email (BCC support) and the order sheet, after the response.
+    after(async () => {
+      await sendOrderConfirmation(String(orderId));
+      await syncPaidOrderToSheet(String(orderId));
+    });
 
     return NextResponse.json({
       ok: true,

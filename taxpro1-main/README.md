@@ -1,7 +1,11 @@
 # Taxpropath
 
-Rebuild of taxpropath.com — a CPE/CE webinar platform for accounting, tax, finance,
-and HR professionals. Next.js (App Router) + Tailwind CSS v4 + Supabase.
+taxpropath.com sells self-study CPE/CE courses to accounting, tax, finance and
+HR professionals. Next.js (App Router), Tailwind CSS v4, Supabase and PayPal.
+
+A visitor picks a course, can add an e-Transcript and/or Slides, pays with
+PayPal (an account is required), and then opens their portal at
+portal.taxpropath.com, where the course plays.
 
 ## Getting started
 
@@ -10,62 +14,132 @@ npm install
 npm run dev
 ```
 
-The app runs at http://localhost:3000 without any configuration. Supabase-backed
-features (auth, order persistence, contact form storage) stay inert until you supply
-real credentials — forms still submit and validate, they just don't write to a
-database.
+Without Supabase credentials the site still runs and shows the sample courses
+in `src/lib/data/sample-courses.ts`. Sign-in, checkout and the admin panel need
+a database.
 
-## Connecting Supabase
+## Database
 
-1. Create a project at [supabase.com](https://supabase.com).
-2. Copy the example env file and fill in your project values:
-
-   ```bash
-   cp .env.local.example .env.local
-   ```
-
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=https://<your-ref>.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
-   ```
-
-3. Run the schema in the Supabase SQL editor:
+1. In the Supabase SQL editor, run the files in `supabase/migrations/` in order
+   (`0001`, `0002`, `0003`) once on an empty database. Future changes go in new
+   numbered files (`0004_...`, and so on). The order pages, Error Monitor and
+   saved carts need `0003`.
+2. Optional, for development only: load the sample courses with
+   `npx tsx scripts/seed-catalog.ts`. The add-on prices in that data are
+   placeholders.
+3. Put the project values in `.env.local`:
 
    ```
-   supabase/migrations/0001_init.sql
+   NEXT_PUBLIC_SUPABASE_URL=...
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+   SUPABASE_SERVICE_ROLE_KEY=...
    ```
 
-   It creates the catalog tables (`presenters`, `webinars`, `pricing_options`),
-   commerce tables (`orders`, `order_items`), `profiles` wired to `auth.users`, a
-   `contact_messages` table, and row-level security policies for all of them.
+`supabase/reset_taxpropath.sql` drops every TaxProPath table so the schema can
+be re-run from scratch. It deletes all data, so only use it on test databases.
+It leaves other sites sharing the database (webtiq_* tables) and auth.users
+alone.
 
-4. Restart the dev server. Auth, checkout persistence, and the contact form activate
-   automatically.
+## Admin panel
 
-## Content
+The admin panel is separate from the shop. It lives at `/admin-login`, and
+customer accounts can't sign in there. Admin accounts are rows in
+`admin_users`. Their passwords are stored by Supabase Auth.
 
-Webinar copy, presenters, dates, and the 11 pricing tiers per session are transcribed
-from the existing site into `src/lib/data/webinars.ts`. Pages read through the
-accessors at the bottom of that file (`getWebinars`, `getWebinar`, `getFeatured`,
-`getRelated`), so swapping in Supabase queries later means changing only that module.
+- A **Super Admin** sees everything and manages the other admins on
+  **Access Level** (`/admin/access`).
+- Every other admin gets one of three levels for each sidebar section: no
+  access, **view** (lists, details, downloads), or **edit** (view plus create,
+  change, delete, sync). The server checks this on every page and action
+  (`requireAdmin(section, level)` in `src/lib/admin-auth.ts`). The section
+  list is in `src/lib/admin/permissions.ts`.
+- Every admin change is recorded in **Activity Logs**.
+- Orders are split into Completed, Order Sheet (with a portal access /
+  certificate checklist), Failed, and Abandoned Analysis. You can also enter a
+  manual order.
+- Google Sheets sync posts rows to an Apps Script web app. Set
+  `GOOGLE_SHEETS_URL` (orders and users) and `GOOGLE_SHEETS_ABANDONED_URL`.
+- **Completed Orders**: edit an order (a manual order fully; a PayPal order only
+  its customer details and remarks), resend the confirmation email, download
+  the invoice as a PDF, and delete. Delete is a soft delete confirmed by typing
+  your own name; the order then disappears from every list, export, the
+  customer's account and `get_orders`.
+- **Dashboard**: today / this month / all-time revenue and orders, a 30-day or
+  12-month chart, what people buy (Self-Study / e-Transcript / Slides), top
+  courses, needs-attention items and quick buttons.
+- **Registered Users** shows each customer's current cart (saved while they're
+  signed in), their paid orders, and can be searched.
+- **Error Monitor** (Super Admin only) lists server crashes, failed server
+  actions and API calls, database errors, email failures, browser script
+  errors, files that failed to load, failed requests and 404s — with who it
+  happened to and the reference shown to the visitor. Entries older than 30
+  days are removed automatically.
+- Banner images can be uploaded (WebP or PNG, max 5 MB). They go to a public
+  Supabase Storage bucket, `site-images`, which the first upload creates on its
+  own. The server checks the file's actual bytes, not just its name.
 
-### Known content gap
+The first Super Admin is created once in the SQL editor, using an existing
+login:
 
-**Performance Management – Food for Thought** is intentionally omitted. That page was
-already broken on the live site — blank description, no pricing options, and an epoch
-fallback date (31 Dec 1969). Only its title, presenter (Peter Walmsley), and date
-(08 Jun 2026) exist anywhere in the source. Add the real copy and prices to
-`src/lib/data/webinars.ts` to restore it.
+```sql
+insert into admin_users (id, name, email, is_super)
+select id, 'Super Admin', email, true from auth.users
+where email = 'you@example.com';
+```
 
-## Payments
+## Customer emails and the customer journey
 
-Checkout is deliberately UI-only. `POST /api/orders` re-resolves every line item
-against the catalog and recomputes the total server-side — client-supplied prices are
-never trusted — then records the order and returns. No payment processor is wired up
-and no card details are collected anywhere in the app.
+Sent over SMTP once these are set (nothing is sent without them):
+
+```
+SMTP_HOST=smtp.hostinger.com
+SMTP_PORT=465
+SMTP_USER=support@taxpropath.com
+SMTP_PASS=...
+MAIL_FROM="Taxpropath <support@taxpropath.com>"
+MAIL_BCC=support@taxpropath.com     # optional copy of order emails
+NEXT_PUBLIC_SITE_URL=https://taxpropath.com
+```
+
+| Step | What happens |
+|---|---|
+| Sign-up confirmed | Welcome email, registered-user row in Google Sheets (once per account) |
+| Checkout started | Abandoned row in Google Sheets |
+| PayPal window closed without paying | "Registration Incomplete" email with links back to the courses (once per order) |
+| Payment captured | Order confirmation email (BCC `MAIL_BCC`), order rows in Google Sheets |
+| Manual order | Confirmation email if the box is ticked |
+
+Customers have **My Account** (`/account`): profile (editable), My Orders,
+Change Password, and a link to the learning portal. A forgotten password is
+reset at `/reset-password` from the emailed link.
+
+## How a purchase works
+
+- Each course has one `SELF_STUDY` price and up to two add-ons
+  (`ETRANSCRIPT`, `SLIDES`) in `pricing_options`.
+- The cart lives in localStorage and holds one line per course.
+- `/api/paypal/create-order` re-prices the cart from the database. Prices sent
+  by the browser are ignored. The pending order is recorded through the
+  `place_order` RPC.
+- `/api/paypal/capture-order` settles it through `mark_order_paid`, which
+  refuses to mark an order paid if the captured amount doesn't match.
+
+## Integrations
+
+These do nothing until their keys are set in `.env.local`:
+
+| Route | Used by | Key |
+|---|---|---|
+| `GET /api/get_orders` | CRM pulls paid orders | `ORDERS_API_KEY` |
+| `GET /api/get_registered_users` | CRM pulls customers (no passwords) | `ORDERS_API_KEY` |
+| `GET /api/get_failed_orders` | CRM pulls unpaid checkouts | `ORDERS_API_KEY` |
+| `GET /api/get_abandoned_analysis` | CRM pulls unpaid checkouts + per-customer summary | `ORDERS_API_KEY` |
+| `GET /api/get_services` | Course engine mirrors the catalog | `SERVICES_API_KEY` |
+| `POST /api/create_service` | Course engine pushes a course | `SERVICES_API_KEY` |
+| doorbell after capture | Course engine | `ENGINE_HOOK_URL`, `ENGINE_HOOK_SECRET` |
 
 ## Brand
 
-Colors and type are derived from the existing logo (`public/logo.png`): a green
-(`#16a34a`) to blue (`#0066cc`) gradient over a warm cream canvas and dark navy
-footer, set in Montserrat. Tokens live in `src/app/globals.css`.
+Colours and type come from the logo (`public/logo.png`): a green (`#16a34a`) to
+blue (`#0066cc`) gradient on a warm cream background with a dark navy footer,
+set in Montserrat. The tokens live in `src/app/globals.css`.

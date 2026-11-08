@@ -12,8 +12,7 @@ const INDUSTRIES = [
 ];
 
 const USEFUL_LINKS = [
-  { href: "/webinar/upcoming", label: "Upcoming Webinar" },
-  { href: "/webinar/pre-recorded", label: "Pre Recorded Webinar" },
+  { href: "/courses", label: "Self-Study Courses" },
   { href: "/blog", label: "Blog" },
   { href: "/gallery", label: "Gallery" },
   { href: "/privacy-policy", label: "Privacy Policy" },

@@ -1,10 +1,10 @@
-export type WebinarKind = "upcoming" | "pre_recorded";
-
 export type PricingOption = {
   id: string;
   label: string;
   description: string | null;
   priceCents: number;
+  /** SELF_STUDY (the course itself) | ETRANSCRIPT | SLIDES (optional add-ons). */
+  code: string;
 };
 
 export type FaqItem = {
@@ -12,14 +12,11 @@ export type FaqItem = {
   answer: string;
 };
 
-export type Webinar = {
+export type Course = {
+  id: string;
   slug: string;
   title: string;
-  kind: WebinarKind;
   presenter: string;
-  eventAt: string;
-  durationMins: number;
-  productCode: string | null;
   description: string[];
   learningObjectives: string[];
   topicsCovered: string[];
@@ -28,22 +25,37 @@ export type Webinar = {
   fieldOfStudy: string | null;
   prerequisites: string;
   learningLevel: string | null;
-  deliveryMethod: string;
-  industry: string;
   isFeatured: boolean;
   pricingOptions: PricingOption[];
-  // Optional: only the Supabase-backed catalog populates these (the hand-
-  // transcribed static fallback in ./data/webinars.ts predates them).
-  seoTitle?: string | null;
-  seoDescription?: string | null;
-  faq?: FaqItem[];
+  seoTitle: string | null;
+  seoDescription: string | null;
+  faq: FaqItem[];
+  engineDeliveryId: string | null;
+  engineProgramId: string | null;
 };
 
-export type CartLine = {
-  webinarSlug: string;
-  title: string;
-  optionId: string;
-  optionLabel: string;
-  unitPriceCents: number;
-  quantity: number;
+export type CartAddon = {
+  code: string; // ETRANSCRIPT | SLIDES
+  label: string;
+  priceCents: number;
 };
+
+/** One course in the cart. A course can only be in the cart once. */
+export type CartLine = {
+  courseSlug: string;
+  title: string;
+  /** The SELF_STUDY price, before add-ons. */
+  basePriceCents: number;
+  addons: CartAddon[];
+};
+
+/** Course price including the add-ons chosen for it. */
+export function cartLineTotalCents(line: CartLine): number {
+  return line.basePriceCents + line.addons.reduce((sum, a) => sum + a.priceCents, 0);
+}
+
+/** Pricing option codes for self-study courses. */
+export const COURSE_CODES = {
+  base: "SELF_STUDY",
+  addons: ["ETRANSCRIPT", "SLIDES"],
+} as const;

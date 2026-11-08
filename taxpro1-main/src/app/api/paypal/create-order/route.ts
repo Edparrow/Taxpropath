@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient, hasServiceRoleKey } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createPaypalOrder, isPaypalConfigured } from "@/lib/paypal";
 import { priceCart, sanitizeBilling } from "@/lib/cart-pricing";
 import { validateCoupon } from "@/lib/coupons";
+import { syncCheckoutToAbandonedSheet, welcomeNewCustomer } from "@/lib/customer-journey";
 
 export async function POST(request: Request) {
   if (!isPaypalConfigured() || !isSupabaseConfigured() || !hasServiceRoleKey()) {
@@ -75,6 +76,26 @@ export async function POST(request: Request) {
     // Record our own pending order alongside it so capture can verify the
     // amount later, and so an abandoned payment leaves an auditable trail.
     const admin = createAdminClient();
+
+    // A buyer whose login came from the other site sharing this auth database
+    // has no TaxProPath profile yet; buying here makes them a customer.
+    await admin.from("profiles").upsert(
+      {
+        id: user.id,
+        first_name: billing.first_name || null,
+        last_name: billing.last_name || null,
+        phone: billing.phone || null,
+        company: billing.company || null,
+        address1: billing.address1 || null,
+        address2: billing.address2 || null,
+        city: billing.city || null,
+        zip: billing.zip || null,
+        ptin: billing.ptin || null,
+        country: billing.country || null,
+        region: billing.region || null,
+      },
+      { onConflict: "id", ignoreDuplicates: true },
+    );
     const { error } = await admin.rpc("place_order", {
       p_user_id: user.id,
       // Ownership comes from the session; the form's email is billing detail only.
@@ -93,6 +114,14 @@ export async function POST(request: Request) {
         { status: 500 },
       );
     }
+
+    // Journey capture, after the response so the buyer never waits on it:
+    // the checkout goes to the abandoned sheet until it's paid, and a buyer
+    // whose welcome hasn't gone out yet gets it now.
+    after(async () => {
+      await syncCheckoutToAbandonedSheet(paypalOrder.id);
+      await welcomeNewCustomer(user.id);
+    });
 
     return NextResponse.json({ id: paypalOrder.id });
   } catch (err) {

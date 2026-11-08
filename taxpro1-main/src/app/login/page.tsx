@@ -13,7 +13,7 @@ import {
 } from "@/components/form";
 import { safeNextPath } from "@/lib/next-path";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { PageBanner } from "@/components/ui";
+import { AuthShell } from "@/components/auth-shell";
 
 function LoginForm() {
   const router = useRouter();
@@ -24,7 +24,8 @@ function LoginForm() {
   // Where to land after signing in — set when arriving from a gated page.
   const next = safeNextPath(searchParams.get("next"));
   const [notice, setNotice] = useState<string | null>(null);
-  const [resetOpen, setResetOpen] = useState(false);
+  // ?reset=1 (from Change Password or an expired reset link) opens the reset form.
+  const [resetOpen, setResetOpen] = useState(searchParams.get("reset") === "1");
 
   async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -59,7 +60,9 @@ function LoginForm() {
     const { error } = await supabase.auth.resetPasswordForEmail(
       String(form.get("reset_email")),
       {
-        redirectTo: `${window.location.origin}/login?next=${encodeURIComponent(next)}`,
+        // /auth/callback turns the link into a session, then /reset-password
+        // asks for the new password.
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent("/reset-password")}`,
       },
     );
 
@@ -73,107 +76,85 @@ function LoginForm() {
   }
 
   return (
-    <>
-      <PageBanner
-        title="Login"
-        crumb={[
-          { href: "/", label: "Home" },
-          { href: "/login", label: "Login" },
-        ]}
-      />
-
-      <section className="bg-white">
-        <div className="mx-auto max-w-md px-4 py-16 sm:px-6">
-          <div className="rounded-3xl border border-slate-200 p-8">
-            <h2 className="text-xl font-extrabold text-navy-950">
-              Sign in to your account
-            </h2>
-
-            {!isSupabaseConfigured() && (
-              <div className="mt-5">
-                <SupabaseNotice />
-              </div>
-            )}
-
-            {notice && (
-              <div className="mt-5">
-                <FormAlert tone="success">{notice}</FormAlert>
-              </div>
-            )}
-            {error && (
-              <div className="mt-5">
-                <FormAlert tone="error">{error}</FormAlert>
-              </div>
-            )}
-
-            {resetOpen ? (
-              <form onSubmit={handleReset} className="mt-6 space-y-5">
-                <Field
-                  label="Enter your registered email"
-                  htmlFor="reset_email"
-                  required
-                >
-                  <Input
-                    id="reset_email"
-                    name="reset_email"
-                    type="email"
-                    required
-                    autoComplete="email"
-                  />
-                </Field>
-                <SubmitButton pending={pending}>Send Reset Link</SubmitButton>
-                <button
-                  type="button"
-                  onClick={() => setResetOpen(false)}
-                  className="w-full cursor-pointer text-center text-[13.5px] font-semibold text-ink-muted hover:text-brand-700"
-                >
-                  Cancel
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handleLogin} className="mt-6 space-y-5">
-                <Field label="Email" htmlFor="email" required>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    autoComplete="email"
-                  />
-                </Field>
-                <Field label="Password" htmlFor="password" required>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    required
-                    autoComplete="current-password"
-                  />
-                </Field>
-                <SubmitButton pending={pending}>Login</SubmitButton>
-                <button
-                  type="button"
-                  onClick={() => setResetOpen(true)}
-                  className="w-full cursor-pointer text-center text-[13.5px] font-semibold text-brand-700 hover:underline"
-                >
-                  Forgot Password?
-                </button>
-              </form>
-            )}
-          </div>
-
-          <p className="mt-6 text-center text-[14.5px] text-ink-muted">
-            Don&rsquo;t have an account?{" "}
+    <AuthShell
+      word={resetOpen ? "Reset" : "Login"}
+      tagline={
+        resetOpen
+          ? "Forgot your password? We'll email you a link to set a new one."
+          : "Welcome back. Sign in to buy courses, see your orders and open your learning portal."
+      }
+    >
+      <h2 className="text-3xl font-extrabold tracking-tight text-navy-950">
+        {resetOpen ? "Reset your password" : "Sign in to your account"}
+      </h2>
+      <p className="mt-2 text-[15px] text-ink-muted">
+        {resetOpen ? (
+          "Enter the email you registered with."
+        ) : (
+          <>
+            New to Taxpropath?{" "}
             <Link
               href={`/register?next=${encodeURIComponent(next)}`}
               className="font-bold text-brand-700 hover:underline"
             >
-              Register
+              Create an account
             </Link>
-          </p>
+          </>
+        )}
+      </p>
+
+      {!isSupabaseConfigured() && (
+        <div className="mt-6">
+          <SupabaseNotice />
         </div>
-      </section>
-    </>
+      )}
+
+      {notice && (
+        <div className="mt-6">
+          <FormAlert tone="success">{notice}</FormAlert>
+        </div>
+      )}
+      {error && (
+        <div className="mt-6">
+          <FormAlert tone="error">{error}</FormAlert>
+        </div>
+      )}
+
+      {resetOpen ? (
+        <form onSubmit={handleReset} className="mt-8 space-y-5">
+          <Field label="Email" htmlFor="reset_email" required>
+            <Input id="reset_email" name="reset_email" type="email" required autoComplete="email" />
+          </Field>
+          <SubmitButton pending={pending}>Send Reset Link</SubmitButton>
+          <button
+            type="button"
+            onClick={() => setResetOpen(false)}
+            className="w-full cursor-pointer text-center text-[14px] font-semibold text-ink-muted hover:text-brand-700"
+          >
+            Back to login
+          </button>
+        </form>
+      ) : (
+        <form onSubmit={handleLogin} className="mt-8 space-y-5">
+          <Field label="Email" htmlFor="email" required>
+            <Input id="email" name="email" type="email" required autoComplete="email" />
+          </Field>
+          <Field label="Password" htmlFor="password" required>
+            <Input id="password" name="password" type="password" required autoComplete="current-password" />
+          </Field>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setResetOpen(true)}
+              className="cursor-pointer text-[13.5px] font-semibold text-brand-700 hover:underline"
+            >
+              Forgot Password?
+            </button>
+          </div>
+          <SubmitButton pending={pending}>Login</SubmitButton>
+        </form>
+      )}
+    </AuthShell>
   );
 }
 

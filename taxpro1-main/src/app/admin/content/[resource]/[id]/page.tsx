@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-auth";
+import { isAdminSection } from "@/lib/admin/permissions";
 import { findResource } from "@/lib/admin/resources";
 import { RecordForm } from "../../record-form";
 import { loadReferenceOptions } from "../reference-options";
@@ -21,11 +22,10 @@ export default async function EditRecordPage({
 }: {
   params: Promise<{ resource: string; id: string }>;
 }) {
-  await requireAdmin();
-
   const { resource: slug, id } = await params;
   const resource = findResource(slug);
-  if (!resource) notFound();
+  if (!resource || !isAdminSection(resource.slug)) notFound();
+  await requireAdmin(resource.slug);
 
   const supabase = await createClient();
   const [{ data: row, error }, referenceOptions] = await Promise.all([

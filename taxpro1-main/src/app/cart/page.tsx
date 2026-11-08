@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Minus, Plus, ShoppingCart, Trash2, UserPlus } from "lucide-react";
+import { ShoppingCart, Trash2, UserPlus } from "lucide-react";
 import { useCart } from "@/components/cart-provider";
 import { useUser } from "@/components/use-user";
 import { PageBanner, PillLink } from "@/components/ui";
 import { formatPrice } from "@/lib/utils";
+import { cartLineTotalCents } from "@/lib/types";
 
 export default function CartPage() {
-  const { lines, subtotalCents, setQuantity, removeLine } = useCart();
+  const { lines, subtotalCents, removeLine } = useCart();
   const user = useUser();
 
   return (
@@ -30,10 +31,10 @@ export default function CartPage() {
                 Your cart is empty
               </h2>
               <p className="mt-2 text-[15px] text-ink-muted">
-                Browse our upcoming sessions and add one to get started.
+                Browse our self-study courses and add one to get started.
               </p>
               <div className="mt-8 flex justify-center">
-                <PillLink href="/webinar/upcoming">Browse Webinars</PillLink>
+                <PillLink href="/courses">Browse Courses</PillLink>
               </div>
             </div>
           ) : (
@@ -42,7 +43,7 @@ export default function CartPage() {
                 <table className="w-full min-w-[36rem] border-collapse">
                   <thead>
                     <tr className="border-b border-slate-200 text-left">
-                      {["Product Name", "Quantity", "Price", "Total", ""].map((h) => (
+                      {["Course", "Price", ""].map((h) => (
                         <th
                           key={h}
                           scope="col"
@@ -55,52 +56,40 @@ export default function CartPage() {
                   </thead>
                   <tbody>
                     {lines.map((line) => (
-                      <tr key={line.optionId} className="border-b border-slate-100">
+                      <tr key={line.courseSlug} className="border-b border-slate-100">
                         <td className="py-5 pr-6">
                           <Link
-                            href={`/webinar/${line.webinarSlug}`}
+                            href={`/courses/${line.courseSlug}`}
                             className="text-[15px] font-bold leading-snug text-navy-950 transition-colors duration-200 hover:text-brand-700"
                           >
                             {line.title}
                           </Link>
-                          <p className="mt-1 text-[13px] text-ink-muted">
-                            {line.optionLabel}
-                          </p>
-                        </td>
-                        <td className="py-5 pr-6">
-                          <div className="inline-flex items-center rounded-full border border-slate-200">
-                            <button
-                              onClick={() =>
-                                setQuantity(line.optionId, line.quantity - 1)
-                              }
-                              className="flex size-9 cursor-pointer items-center justify-center rounded-l-full text-ink-muted transition-colors duration-200 hover:bg-slate-50"
-                              aria-label={`Decrease quantity of ${line.title}`}
-                            >
-                              <Minus className="size-3.5" aria-hidden />
-                            </button>
-                            <span className="w-9 text-center text-sm font-bold tabular-nums">
-                              {line.quantity}
+                          <p className="mt-1 flex items-baseline gap-2 text-[13px] text-ink-muted">
+                            Self-Study
+                            <span className="tabular-nums">
+                              {formatPrice(line.basePriceCents)}
                             </span>
-                            <button
-                              onClick={() =>
-                                setQuantity(line.optionId, line.quantity + 1)
-                              }
-                              className="flex size-9 cursor-pointer items-center justify-center rounded-r-full text-ink-muted transition-colors duration-200 hover:bg-slate-50"
-                              aria-label={`Increase quantity of ${line.title}`}
+                          </p>
+                          {/* Add-ons ride on the course line as sub-rows. */}
+                          {line.addons.map((addon) => (
+                            <p
+                              key={addon.code}
+                              className="mt-1 flex items-baseline gap-2 pl-4 text-[12.5px] text-ink-muted"
                             >
-                              <Plus className="size-3.5" aria-hidden />
-                            </button>
-                          </div>
+                              <span aria-hidden className="text-slate-300">└</span>
+                              {addon.label}
+                              <span className="tabular-nums">
+                                +{formatPrice(addon.priceCents)}
+                              </span>
+                            </p>
+                          ))}
                         </td>
-                        <td className="py-5 pr-6 text-[15px] tabular-nums text-ink-muted">
-                          {formatPrice(line.unitPriceCents)}
-                        </td>
-                        <td className="py-5 pr-6 text-[15px] font-extrabold tabular-nums text-navy-950">
-                          {formatPrice(line.unitPriceCents * line.quantity)}
+                        <td className="py-5 pr-6 align-top text-[15px] font-extrabold tabular-nums text-navy-950">
+                          {formatPrice(cartLineTotalCents(line))}
                         </td>
                         <td className="py-5">
                           <button
-                            onClick={() => removeLine(line.optionId)}
+                            onClick={() => removeLine(line.courseSlug)}
                             className="cursor-pointer rounded-full p-2 text-slate-400 transition-colors duration-200 hover:bg-red-50 hover:text-red-600"
                             aria-label={`Remove ${line.title} from cart`}
                           >

@@ -79,6 +79,66 @@ body {
   animation: fade-in 0.6s ease-out;
 }
 
+/* ---------------------------------------------------- auth split screen */
+/* Login / Register left panel: drifting colour blobs, floating cards and a
+   title whose letters rise in one by one. */
+@keyframes auth-drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(70px, -50px) scale(1.18); }
+}
+@keyframes auth-drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-60px, 60px) scale(0.88); }
+}
+@keyframes auth-float {
+  0%, 100% { transform: translateY(0) rotate(var(--tilt, 0deg)); }
+  50% { transform: translateY(-14px) rotate(var(--tilt, 0deg)); }
+}
+@keyframes auth-letter {
+  from { opacity: 0; transform: translateY(0.55em) rotate(10deg); filter: blur(8px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+@keyframes auth-underline {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes auth-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.8); }
+}
+@keyframes auth-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+.auth-blob-a { animation: auth-drift-a 14s ease-in-out infinite; }
+.auth-blob-b { animation: auth-drift-b 18s ease-in-out infinite; }
+.auth-float { animation: auth-float 6s ease-in-out infinite; }
+.auth-letter {
+  display: inline-block;
+  opacity: 0;
+  animation: auth-letter 0.75s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation-delay: calc(var(--i) * 85ms + 150ms);
+}
+.auth-underline {
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: auth-underline 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.8s forwards;
+}
+.auth-dot { animation: auth-pulse 1.8s ease-in-out infinite; }
+.auth-rise {
+  opacity: 0;
+  animation: auth-rise 0.7s ease-out forwards;
+  animation-delay: var(--d, 0.9s);
+}
+.auth-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse at 30% 40%, black 20%, transparent 75%);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
