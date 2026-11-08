@@ -1,0 +1,29 @@
+# Repository-wide ignores. The website's own rules are in taxpro1-main/.gitignore.
+
+# Notes, docs and drafts stay on this computer. Files that are already
+# committed (e.g. taxpro1-main/README.md) are still tracked.
+*.md
+*.txt
+# ...except plain-text files the website serves (robots.txt, ads.txt).
+!taxpro1-main/public/*.txt
+
+# Research pages saved from other sites
+becker_*
+
+# Work-in-progress briefs
+new_updates_tobe_done/
+
+# Local tooling and scratch files
+.claude/
+tmp_*.json
+/package-lock.json
+
+# Archives and backups
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# Secrets, wherever they are
+.env*
+*.pem
