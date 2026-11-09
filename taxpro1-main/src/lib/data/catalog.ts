@@ -29,7 +29,7 @@ type Row = {
   faq: FaqItem[] | null;
   engine_delivery_id: string | null;
   engine_program_id: string | null;
-  presenters: { name: string } | null;
+  presenters: { name: string; avatar_url: string | null } | null;
   pricing_options: {
     id: string;
     code: string;
@@ -45,7 +45,7 @@ const COLUMNS = `
   who_should_attend, cpe_credit, field_of_study, prerequisites, learning_level,
   is_featured, seo_title, seo_description, faq, engine_delivery_id,
   engine_program_id,
-  presenters ( name ),
+  presenters ( name, avatar_url ),
   pricing_options ( id, code, label, description, price_cents, sort_order )
 `;
 
@@ -65,6 +65,7 @@ function toCourse(row: Row): Course {
     slug: row.slug,
     title: row.title,
     presenter: row.presenters?.name ?? "",
+    presenterAvatar: row.presenters?.avatar_url ?? null,
     // Stored as one text field; paragraphs are blank-line separated.
     description: (row.description ?? "").split(/\n{2,}/).filter(Boolean),
     learningObjectives: row.learning_objectives ?? [],

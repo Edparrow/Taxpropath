@@ -17,6 +17,8 @@ export type Course = {
   slug: string;
   title: string;
   presenter: string;
+  /** Speaker photo from Admin > Speakers, when one is set. */
+  presenterAvatar?: string | null;
   description: string[];
   learningObjectives: string[];
   topicsCovered: string[];
