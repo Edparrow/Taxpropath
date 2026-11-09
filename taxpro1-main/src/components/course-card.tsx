@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, Award } from "lucide-react";
+import { Award } from "lucide-react";
+import { CourseCardActions } from "@/components/course-card-actions";
 import { COURSE_CODES, type Course } from "@/lib/types";
 import { topicFor } from "@/lib/course-topic";
 import { formatPrice } from "@/lib/utils";
@@ -7,7 +8,7 @@ import { formatPrice } from "@/lib/utils";
 /**
  * Self-study course card, kept deliberately quiet: a clean cover (topic
  * colour + one icon, or the speaker's photo), the title, the speaker, and the
- * price. Everything else lives on the course page.
+ * price with Add to Cart and Buy Now (both open the add-on pop-up).
  */
 export function CourseCard({ course }: { course: Course }) {
   const base =
@@ -83,13 +84,7 @@ export function CourseCard({ course }: { course: Course }) {
                 {formatPrice(base.priceCents)}
               </p>
             )}
-            <span
-              aria-hidden
-              className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3.5 py-1.5 text-[13px] font-semibold text-navy-950 transition-colors duration-200 group-hover:bg-brand-gradient group-hover:text-white"
-            >
-              View
-              <ArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
-            </span>
+            <CourseCardActions course={course} />
           </div>
         </div>
       </div>

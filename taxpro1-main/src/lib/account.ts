@@ -21,6 +21,8 @@ export type Profile = {
   ptin: string | null;
   country: string | null;
   region: string | null;
+  /** Uploaded photo or ready-made avatar; null shows initials. */
+  avatar_url: string | null;
   created_at: string | null;
 };
 
@@ -80,7 +82,7 @@ export const getMyProfile = cache(async (userId: string): Promise<Profile | null
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("profiles")
-    .select(`${PROFILE_FIELDS.join(", ")}, created_at`)
+    .select(`${PROFILE_FIELDS.join(", ")}, avatar_url, created_at`)
     .eq("id", userId)
     .maybeSingle();
   if (error) reportDbError("Loading the customer profile", error);
@@ -134,3 +136,11 @@ export const longDate = (iso: string) =>
 
 export const shortDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+/** "Jane Doe" → "JD"; falls back to the email's first letter. */
+export const profileInitials = (user: User, profile: Profile | null) =>
+  [profile?.first_name, profile?.last_name]
+    .filter(Boolean)
+    .map((s) => s!.trim()[0])
+    .join("")
+    .toUpperCase() || (user.email?.[0] ?? "?").toUpperCase();

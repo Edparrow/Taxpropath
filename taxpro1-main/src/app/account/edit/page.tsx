@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { getMyProfile, requireCustomer } from "@/lib/account";
+import { AccountHeading } from "../account-heading";
 import { ProfileForm } from "./profile-form";
 
 export const metadata: Metadata = { title: "Edit Profile", robots: { index: false } };
@@ -10,10 +13,18 @@ export default async function EditProfilePage() {
 
   return (
     <div>
-      <h2 className="text-xl font-extrabold text-navy-950">Edit profile</h2>
-      <p className="mt-1 text-[14px] text-ink-muted">
-        Your email ({user.email}) is your login and can&rsquo;t be changed here.
-      </p>
+      <AccountHeading
+        title="Edit Profile"
+        description={`Your email (${user.email}) is your login and can't be changed here.`}
+      >
+        <Link
+          href="/account"
+          className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-4 py-2 text-[13.5px] font-semibold text-navy-950 transition-colors hover:border-navy-950"
+        >
+          <ArrowLeft className="size-4" aria-hidden />
+          Back to profile
+        </Link>
+      </AccountHeading>
       <ProfileForm profile={profile} />
     </div>
   );

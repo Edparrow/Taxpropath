@@ -4,7 +4,8 @@
 -- "Our Mentors" on the homepage. Speakers created by typing a name on a
 -- course, or by an import, stay course-only (is_mentor = false).
 -- Run after 0004, in the SQL editor of each database (dev, prod).
--- Safe to re-run. Adds one column and marks the existing mentors.
+-- Also adds profiles.avatar_url (a customer's photo or chosen avatar).
+-- Safe to re-run. Adds two columns and marks the existing mentors.
 -- =====================================================================
 
 alter table presenters add column if not exists is_mentor boolean not null default false;
@@ -22,3 +23,7 @@ where not p.is_mentor
     )
     or (p.is_published and not exists (select 1 from courses c where c.presenter_id = p.id))
   );
+
+-- Customer profile picture: an uploaded photo (Storage URL) or a ready-made
+-- avatar (/api/avatar/<name>). Empty means initials are shown.
+alter table profiles add column if not exists avatar_url text;

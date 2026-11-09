@@ -21,7 +21,7 @@ export function SiteFrame({
   if (pathname.startsWith("/admin")) return <>{children}</>;
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="site-content flex min-h-dvh flex-col">
       {header}
       <main className="flex-1">{children}</main>
       {footer}

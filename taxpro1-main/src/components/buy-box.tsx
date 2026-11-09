@@ -1,21 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { ShoppingCart, Zap } from "lucide-react";
-import { useCart } from "@/components/cart-provider";
-import { AddOnDialog } from "@/components/add-on-dialog";
-import { COURSE_CODES, type Course, type PricingOption } from "@/lib/types";
+import { usePurchase } from "@/components/use-purchase";
+import type { Course } from "@/lib/types";
 import { formatPrice } from "@/lib/utils";
-
-/** Splits a course's options into the base price and the add-ons it offers. */
-function splitCoursePricing(options: PricingOption[]) {
-  const base = options.find((o) => o.code === COURSE_CODES.base) ?? null;
-  const addons = COURSE_CODES.addons
-    .map((code) => options.find((o) => o.code === code))
-    .filter((o): o is PricingOption => Boolean(o));
-  return { base, addons };
-}
 
 /**
  * The course buy box: one base price, and both buttons open the add-on
@@ -23,27 +11,8 @@ function splitCoursePricing(options: PricingOption[]) {
  * checkout.
  */
 export function BuyBox({ course }: { course: Course }) {
-  const router = useRouter();
-  const { addLine } = useCart();
-  const { base, addons } = splitCoursePricing(course.pricingOptions);
-  const [dialog, setDialog] = useState<"cart" | "buy" | null>(null);
-
+  const { base, addons, buyNow, addToCart, dialog } = usePurchase(course);
   if (!base) return null;
-
-  function confirm(selectedCodes: string[]) {
-    if (!base) return;
-    addLine({
-      courseSlug: course.slug,
-      title: course.title,
-      basePriceCents: base.priceCents,
-      addons: addons
-        .filter((a) => selectedCodes.includes(a.code))
-        .map((a) => ({ code: a.code, label: a.label, priceCents: a.priceCents })),
-    });
-    const target = dialog === "buy" ? "/checkout" : "/cart";
-    setDialog(null);
-    router.push(target);
-  }
 
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-7">
@@ -62,7 +31,7 @@ export function BuyBox({ course }: { course: Course }) {
       <div className="mt-6 space-y-3">
         <button
           type="button"
-          onClick={() => setDialog("buy")}
+          onClick={buyNow}
           className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-brand-gradient py-4 text-sm font-bold text-white shadow-lg shadow-brand-600/25 transition-transform duration-200 hover:-translate-y-0.5"
         >
           <Zap className="size-4" aria-hidden />
@@ -70,7 +39,7 @@ export function BuyBox({ course }: { course: Course }) {
         </button>
         <button
           type="button"
-          onClick={() => setDialog("cart")}
+          onClick={addToCart}
           className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border-2 border-navy-950 py-[14px] text-sm font-bold text-navy-950 transition-colors duration-200 hover:bg-navy-950 hover:text-white"
         >
           <ShoppingCart className="size-4" aria-hidden />
@@ -78,15 +47,7 @@ export function BuyBox({ course }: { course: Course }) {
         </button>
       </div>
 
-      <AddOnDialog
-        open={dialog !== null}
-        onClose={() => setDialog(null)}
-        onConfirm={confirm}
-        courseTitle={course.title}
-        base={base}
-        addons={addons}
-        confirmLabel={dialog === "buy" ? "Continue to Checkout" : "Add to Cart"}
-      />
+      {dialog}
     </div>
   );
 }

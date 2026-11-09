@@ -4,6 +4,7 @@ import { ExternalLink } from "lucide-react";
 import { PORTAL_URL } from "@/lib/portal";
 import { formatPrice } from "@/lib/utils";
 import { getMyOrders, myOrderTotalCents, requireCustomer, shortDate } from "@/lib/account";
+import { AccountHeading } from "../account-heading";
 
 export const metadata: Metadata = { title: "My Orders", robots: { index: false } };
 
@@ -13,8 +14,10 @@ export default async function MyOrdersPage() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-xl font-extrabold text-navy-950">My Orders</h2>
+      <AccountHeading
+        title="My Orders"
+        description="Your courses play in your learning portal. Use the same email to sign in there."
+      >
         {orders.length > 0 && (
           <a
             href={PORTAL_URL}
@@ -26,10 +29,10 @@ export default async function MyOrdersPage() {
             <ExternalLink className="size-3.5" aria-hidden />
           </a>
         )}
-      </div>
+      </AccountHeading>
 
       {orders.length === 0 ? (
-        <div className="mt-6 rounded-3xl border border-dashed border-slate-300 px-6 py-16 text-center">
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
           <p className="text-[15px] font-semibold text-navy-950">You haven&rsquo;t bought a course yet.</p>
           <Link
             href="/courses"
@@ -40,12 +43,9 @@ export default async function MyOrdersPage() {
         </div>
       ) : (
         <>
-          <p className="mt-1 text-[14px] text-ink-muted">
-            Your courses play in your learning portal. Use the same email to sign in there.
-          </p>
-          <div className="mt-6 overflow-x-auto rounded-3xl border border-slate-200">
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
             <table className="w-full min-w-[640px] text-left">
-              <thead className="border-b border-slate-200 bg-cream">
+              <thead className="border-b border-slate-200 bg-slate-50">
                 <tr className="text-[12px] font-bold uppercase tracking-wider text-slate-500">
                   <th className="px-5 py-3">Order</th>
                   <th className="px-5 py-3">Products</th>

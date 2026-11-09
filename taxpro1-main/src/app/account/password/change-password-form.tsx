@@ -15,7 +15,7 @@ export function ChangePasswordForm() {
       action={action}
       // Clear the fields after a successful change.
       key={state.done ? "done" : "form"}
-      className="mt-6 max-w-md space-y-5 rounded-3xl border border-slate-200 p-6"
+      className="max-w-md space-y-5 rounded-2xl border border-slate-200 bg-white p-6"
     >
       {state.error && <FormAlert tone="error">{state.error}</FormAlert>}
       {state.done && <FormAlert tone="success">Your password has been changed.</FormAlert>}

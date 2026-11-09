@@ -1,4 +1,5 @@
 @import "tailwindcss";
+/* Tailwind scans the whole app for class names (Tailwind v4 auto-detection). */
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
@@ -46,6 +47,22 @@
    section titles) are large and use the brand gradient; sub-headings stay
    dark; body copy is Inter. */
 @layer base {
+  /* Body copy on the public site is justified. Paragraphs inside anything
+     centred or right-aligned keep that alignment, a paragraph marked
+     text-left stays left, and one-line text is unaffected because the last
+     line is never stretched. */
+  .site-content
+    p:not(
+      [class*="text-center"],
+      [class*="text-center"] *,
+      [class*="text-right"],
+      [class*="text-right"] *,
+      [class*="text-left"],
+      [class*="truncate"]
+    ) {
+    text-align: justify;
+  }
+
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading), system-ui, sans-serif;
     letter-spacing: -0.01em;
