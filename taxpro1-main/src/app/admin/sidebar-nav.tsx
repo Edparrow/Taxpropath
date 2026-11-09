@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BadgeDollarSign,
   BookOpen,
   Building2,
   ClipboardList,
@@ -47,6 +48,7 @@ const NAV_GROUPS: { title: string; links: NavLink[] }[] = [
     title: "CONTENT",
     links: [
       { href: "/admin/courses", label: "Courses", icon: GraduationCap, section: "courses" },
+      { href: "/admin/prices", label: "Change Price", icon: BadgeDollarSign, section: "courses" },
       { href: "/admin/content/banners", label: "Banner", icon: ImageIcon, section: "banners" },
       { href: "/admin/content/categories", label: "Category", icon: FolderTree, section: "categories" },
       { href: "/admin/content/subcategories", label: "SubCategory", icon: Layers, section: "subcategories" },
