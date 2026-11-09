@@ -48,6 +48,12 @@ export type Resource = {
   fields: ResourceField[];
   /** Field names shown as columns in the list view. */
   listColumns: string[];
+  /**
+   * Rows this section manages, when it shares its table with something else
+   * (Speakers only manages the mentors in `presenters`). Applied to the list,
+   * edit, publish and delete, and written into every new row.
+   */
+  scope?: Record<string, string | number | boolean>;
 };
 
 /** Shared by every content table, appended to each resource's own fields. */
@@ -181,8 +187,9 @@ export const RESOURCES: Resource[] = [
     label: "Speaker",
     plural: "Speakers",
     description:
-      "Course speakers. Published speakers appear in \"Our Mentors\" on the homepage.",
+      "Mentors shown in \"Our Mentors\" on the homepage (published ones only). Speakers typed on a course appear only on that course.",
     listColumns: ["name", "title"],
+    scope: { is_mentor: true },
     fields: [
       { name: "name", label: "Name", type: "text", required: true },
       {

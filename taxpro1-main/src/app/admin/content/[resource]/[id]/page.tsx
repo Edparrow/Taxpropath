@@ -29,7 +29,12 @@ export default async function EditRecordPage({
 
   const supabase = await createClient();
   const [{ data: row, error }, referenceOptions] = await Promise.all([
-    supabase.from(resource.table).select("*").eq("id", id).maybeSingle(),
+    supabase
+      .from(resource.table)
+      .select("*")
+      .eq("id", id)
+      .match(resource.scope ?? {})
+      .maybeSingle(),
     loadReferenceOptions(resource),
   ]);
 

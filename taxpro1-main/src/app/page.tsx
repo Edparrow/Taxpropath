@@ -125,7 +125,7 @@ export default async function HomePage() {
               </p>
             </div>
 
-            <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-7">
               {featured.map((course) => (
                 <CourseCard key={course.slug} course={course} />
               ))}
@@ -377,7 +377,7 @@ export default async function HomePage() {
       {/* Speakers from Admin > Speakers; hidden until at least one is published. */}
       {mentors.length > 0 && (
         <section className="bg-cream">
-          <div className="mx-auto max-w-7xl px-4 pb-20 pt-8 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <div className="flex justify-center">
               <Badge>
                 <Mic2 className="size-3.5" aria-hidden />
@@ -385,7 +385,7 @@ export default async function HomePage() {
               </Badge>
             </div>
 
-            <div className="mt-12">
+            <div className="mt-10">
               <SpeakerCarousel
                 speakers={mentors.map((m) => ({
                   name: m.name,

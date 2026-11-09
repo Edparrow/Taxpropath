@@ -53,7 +53,11 @@ export type AboutSection = {
   image_url: string | null;
 };
 
-async function published<T>(table: string, columns: string): Promise<T[]> {
+async function published<T>(
+  table: string,
+  columns: string,
+  where: Record<string, string | boolean> = {},
+): Promise<T[]> {
   if (!isSupabaseConfigured()) return [];
 
   const supabase = await createClient();
@@ -61,6 +65,7 @@ async function published<T>(table: string, columns: string): Promise<T[]> {
     .from(table)
     .select(columns)
     .eq("is_published", true)
+    .match(where)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
@@ -83,9 +88,13 @@ export function getIndustries() {
   return published<Industry>("industries", "id, name, icon, description");
 }
 
-/** Published speakers for "Our Mentors" on the homepage (Admin > Speakers). */
+/** Published mentors for "Our Mentors" (Admin > Speakers). Course-only speakers are left out. */
 export function getMentors() {
-  return published<Mentor>("presenters", "id, name, title, bio, avatar_url, courses(title)");
+  return published<Mentor>(
+    "presenters",
+    "id, name, title, bio, avatar_url, courses(title)",
+    { is_mentor: true },
+  );
 }
 
 export function getBrands() {

@@ -155,7 +155,7 @@ export default async function CourseDetailPage({
         <section className="border-t border-slate-200 bg-cream">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <SectionHeading lead="You may also" accent="be interested in" />
-            <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-7">
               {related.map((item) => (
                 <CourseCard key={item.slug} course={item} />
               ))}

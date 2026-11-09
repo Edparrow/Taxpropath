@@ -13,11 +13,11 @@ export type Speaker = {
 };
 
 /**
- * Auto-advancing "Our Mentors" showcase: bio on the left, photo card on the
- * right. Every 4 seconds it steps to the next speaker, fading both halves in
- * together (remounting the keyed elements re-triggers the CSS fade-in
- * animation defined in globals.css). A speaker without a bio shows the
- * courses they present instead; without a photo, their initials.
+ * Auto-advancing "Our Mentors" showcase: bio on the left, a card on the right
+ * with the photo in a circle (initials when there's no photo), name and
+ * title. Every 4 seconds it steps to the next mentor, fading both halves in
+ * together (remounting the keyed elements re-triggers the CSS fade-in).
+ * A mentor without a bio shows the courses they present instead.
  */
 export function SpeakerCarousel({ speakers }: { speakers: Speaker[] }) {
   const [index, setIndex] = useState(0);
@@ -38,27 +38,24 @@ export function SpeakerCarousel({ speakers }: { speakers: Speaker[] }) {
     <div className="grid items-center gap-10 lg:grid-cols-2">
       <div key={`bio-${index}`} className="animate-fade-in">
         {current.bio ? (
-          <p className="font-poppins text-xl italic leading-relaxed text-ink-muted">
+          <p className="text-xl italic leading-relaxed text-ink-muted">
             &ldquo;{current.bio}&rdquo;
           </p>
         ) : courses.length > 0 ? (
           <div>
-            <p className="font-poppins text-[13px] font-bold uppercase tracking-wider text-brand-600">
+            <p className="text-[13px] font-bold uppercase tracking-wider text-brand-600">
               Teaches
             </p>
             <ul className="mt-3 space-y-2">
               {courses.map((title) => (
-                <li
-                  key={title}
-                  className="font-poppins text-lg leading-snug text-ink-muted"
-                >
+                <li key={title} className="text-lg leading-snug text-ink-muted">
                   {title}
                 </li>
               ))}
             </ul>
           </div>
         ) : (
-          <p className="font-poppins text-xl italic leading-relaxed text-ink-muted">
+          <p className="text-xl italic leading-relaxed text-ink-muted">
             &ldquo;Learn from experienced professionals, at your own pace.&rdquo;
           </p>
         )}
@@ -69,6 +66,7 @@ export function SpeakerCarousel({ speakers }: { speakers: Speaker[] }) {
         className="animate-fade-in mx-auto flex w-full max-w-xs flex-col items-center rounded-2xl bg-white p-8 text-center shadow-lg shadow-navy-950/10"
       >
         {current.avatarUrl ? (
+          // Admin-uploaded URLs can be any host, so a plain <img>.
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={current.avatarUrl}
@@ -80,11 +78,9 @@ export function SpeakerCarousel({ speakers }: { speakers: Speaker[] }) {
             {initials(current.name)}
           </span>
         )}
-        <p className="mt-5 font-display text-lg font-bold text-navy-950">
-          {current.name}
-        </p>
+        <p className="mt-5 font-display text-lg font-bold text-navy-950">{current.name}</p>
         {current.title && (
-          <p className="mt-1 font-poppins text-[12.5px] font-semibold uppercase tracking-wide text-brand-600">
+          <p className="mt-1 text-[12.5px] font-semibold uppercase tracking-wide text-brand-600">
             {current.title}
           </p>
         )}

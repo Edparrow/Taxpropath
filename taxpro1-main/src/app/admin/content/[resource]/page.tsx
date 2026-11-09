@@ -38,6 +38,7 @@ export default async function ContentListPage({
   const { data, error } = await supabase
     .from(resource.table)
     .select("*")
+    .match(resource.scope ?? {})
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 

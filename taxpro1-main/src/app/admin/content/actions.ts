@@ -92,13 +92,30 @@ export async function saveRecord(
     const { error } = await supabase
       .from(resource.table)
       .update(row)
-      .eq("id", recordId);
+      .eq("id", recordId)
+      .match(resource.scope ?? {});
     if (error) {
       console.error(`[admin] ${resource.table} update failed`, error);
       return { error: error.message };
     }
   } else {
-    const { error } = await supabase.from(resource.table).insert(row);
+    const scoped = { ...row, ...resource.scope };
+    // A scoped table can already hold this slug outside the section (e.g. a
+    // course speaker being added as a mentor): take that row over instead of
+    // failing on the unique slug.
+    const existing =
+      resource.scope && row.slug
+        ? (
+            await supabase
+              .from(resource.table)
+              .select("id")
+              .eq("slug", String(row.slug))
+              .maybeSingle()
+          ).data
+        : null;
+    const { error } = existing
+      ? await supabase.from(resource.table).update(scoped).eq("id", existing.id)
+      : await supabase.from(resource.table).insert(scoped);
     if (error) {
       console.error(`[admin] ${resource.table} insert failed`, error);
       return { error: error.message };
@@ -125,7 +142,11 @@ export async function deleteRecord(
   const admin = await requireAdmin(resource.slug, "edit");
 
   const supabase = await createClient();
-  const { error } = await supabase.from(resource.table).delete().eq("id", recordId);
+  const { error } = await supabase
+    .from(resource.table)
+    .delete()
+    .eq("id", recordId)
+    .match(resource.scope ?? {});
   if (error) {
     console.error(`[admin] ${resource.table} delete failed`, error);
     return { error: error.message };
@@ -153,7 +174,8 @@ export async function togglePublished(
   const { error } = await supabase
     .from(resource.table)
     .update({ is_published: next })
-    .eq("id", recordId);
+    .eq("id", recordId)
+    .match(resource.scope ?? {});
   if (error) {
     console.error(`[admin] ${resource.table} publish toggle failed`, error);
     return { error: error.message };
