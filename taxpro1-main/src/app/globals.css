@@ -32,10 +32,24 @@
 
   --color-ink: #0f172a;
   --color-ink-muted: #475569;
+}
 
-  --font-sans: var(--font-montserrat), system-ui, sans-serif;
-  --font-display: var(--font-montserrat), system-ui, sans-serif;
-  --font-poppins: var(--font-poppins), system-ui, sans-serif;
+/* "inline" makes each utility use the font variable directly, so it resolves
+   wherever next/font sets it. font-poppins is kept as a class name only. */
+@theme inline {
+  --font-sans: var(--font-body), system-ui, sans-serif;
+  --font-display: var(--font-heading), system-ui, sans-serif;
+  --font-poppins: var(--font-heading), system-ui, sans-serif;
+}
+
+/* Type scale: every heading uses the heading face. Main headings (page and
+   section titles) are large and use the brand gradient; sub-headings stay
+   dark; body copy is Inter. */
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading), system-ui, sans-serif;
+    letter-spacing: -0.01em;
+  }
 }
 
 :root {
@@ -61,9 +75,43 @@ body {
   background: linear-gradient(100deg, #16a34a 0%, #0066cc 100%);
 }
 
-/* Accent used for the second line of section headings */
-.heading-accent {
+/* Heading colour: deep green into deep blue (no light tints), so large
+   titles read rich rather than neon. */
+.text-heading-gradient {
+  background: linear-gradient(100deg, #166534 0%, #0f766e 45%, #0055aa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
+
+/* Bright version for headings on dark backgrounds. */
+.text-heading-gradient-light {
+  background: linear-gradient(100deg, #4ade80 0%, #2dd4bf 45%, #60a5fa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* A light sweep that keeps moving through a gradient heading. */
+.text-shimmer {
+  background: linear-gradient(110deg, #4ade80 0%, #2dd4bf 30%, #ecfeff 45%, #60a5fa 60%, #2dd4bf 80%, #4ade80 100%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: text-shimmer 6s linear infinite;
+}
+@keyframes text-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -150% 0; }
+}
+
+/* "Scroll" hint at the bottom of a full-screen banner. */
+@keyframes scroll-hint {
+  0%, 100% { transform: translateY(0); opacity: 1; }
+  50% { transform: translateY(6px); opacity: 0.5; }
+}
+.scroll-hint { animation: scroll-hint 1.8s ease-in-out infinite; }
 
 /* Crossfade used by the auto-advancing speaker showcase */
 @keyframes fade-in {

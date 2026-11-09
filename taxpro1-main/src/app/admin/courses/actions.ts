@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { COURSE_CODES } from "@/lib/types";
 import { logActivity } from "@/lib/admin/activity";
+import { TRENDING_LIMIT } from "@/lib/trending";
 import { PRICE_LABELS, priceCents, type PriceCode } from "@/lib/admin/pricing";
 
 /**
@@ -77,6 +78,51 @@ async function resolvePresenter(
 
 type Result = { error: string } | void;
 
+/** An error message when one more trending course would pass the limit. */
+async function trendingLimitError(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  exceptId: string | null,
+): Promise<string | null> {
+  let query = supabase
+    .from("courses")
+    .select("id", { count: "exact", head: true })
+    .eq("is_featured", true);
+  if (exceptId) query = query.neq("id", exceptId);
+  const { count, error } = await query;
+  if (error) return "Could not check the trending courses. Please try again.";
+  return (count ?? 0) >= TRENDING_LIMIT
+    ? `Only ${TRENDING_LIMIT} courses can be Trending. Remove one first.`
+    : null;
+}
+
+/** Turns a course's "Trending on the homepage" flag on or off (max 6 on). */
+export async function setTrending(courseId: string, on: boolean): Promise<Result> {
+  const admin = await requireAdmin("courses", "edit");
+  const supabase = await createClient();
+
+  if (on) {
+    const limitError = await trendingLimitError(supabase, courseId);
+    if (limitError) return { error: limitError };
+  }
+
+  const { data, error } = await supabase
+    .from("courses")
+    .update({ is_featured: on })
+    .eq("id", courseId)
+    .select("title")
+    .maybeSingle();
+  if (error || !data) return { error: "Could not update the course. Please try again." };
+
+  await logActivity(
+    admin,
+    on ? "ADD_TRENDING" : "REMOVE_TRENDING",
+    `${on ? "Added" : "Removed"} "${data.title}" ${on ? "to" : "from"} Trending Courses.`,
+    { type: "course", id: courseId },
+  );
+  revalidatePath("/admin/courses");
+  revalidatePath("/");
+}
+
 export async function saveCourse(
   courseId: string | null,
   _prev: unknown,
@@ -103,6 +149,11 @@ export async function saveCourse(
   }
   if (Object.values(prices).some((p) => Number.isNaN(p))) {
     return { error: "Prices must be valid amounts of zero or more." };
+  }
+
+  if (formData.get("is_featured") === "on") {
+    const limitError = await trendingLimitError(supabase, courseId);
+    if (limitError) return { error: limitError };
   }
 
   const presenterId = await resolvePresenter(

@@ -124,7 +124,8 @@ export async function getCourse(slug: string): Promise<Course | null> {
 }
 
 /** Featured courses for the homepage, falling back to the newest ones. */
-export async function getFeaturedCourses(limit = 3): Promise<Course[]> {
+/** "Trending Courses": the ones marked Trending in admin, else the newest. */
+export async function getFeaturedCourses(limit = 6): Promise<Course[]> {
   const all = await getCourses();
   const featured = all.filter((c) => c.isFeatured);
   return (featured.length ? featured : all).slice(0, limit);

@@ -5,7 +5,7 @@ import { Award, UserRound } from "lucide-react";
 import { getCourse, getCourses } from "@/lib/data/catalog";
 import { CourseCard } from "@/components/course-card";
 import { BuyBox } from "@/components/buy-box";
-import { SectionHeading } from "@/components/ui";
+import { DarkBreadcrumb, DarkGlow, SectionHeading } from "@/components/ui";
 
 export async function generateMetadata({
   params,
@@ -42,30 +42,25 @@ export default async function CourseDetailPage({
   return (
     <>
       {/* ------------------------------------------------------------- banner */}
-      <section className="border-b border-cream-dark bg-cream">
-        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-          <nav aria-label="Breadcrumb" className="mb-6 flex flex-wrap gap-2 text-sm">
-            <Link
-              href="/"
-              className="font-medium text-ink-muted transition-colors duration-200 hover:text-brand-700"
-            >
-              Home
-            </Link>
-            <span className="text-slate-400">/</span>
-            <Link
-              href="/courses"
-              className="font-medium text-ink-muted transition-colors duration-200 hover:text-brand-700"
-            >
-              Self-Study Courses
-            </Link>
-          </nav>
+      <section className="relative isolate overflow-hidden bg-navy-950">
+        <DarkGlow />
+        <div className="mx-auto flex max-w-7xl flex-col items-center px-4 py-16 text-center sm:px-6 lg:px-8 lg:py-20">
+          <DarkBreadcrumb
+            crumb={[
+              { href: "/", label: "Home" },
+              { href: "/courses", label: "Self-Study Courses" },
+              { href: `/courses/${course.slug}`, label: "Course" },
+            ]}
+          />
 
-          <h1 className="max-w-4xl text-3xl font-extrabold leading-tight tracking-tight text-navy-950 sm:text-4xl lg:text-[2.75rem]">
-            {course.title}
+          <h1 className="mt-6 max-w-4xl text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-[2.75rem]">
+            <span className="text-heading-gradient-light pb-1">{course.title}</span>
           </h1>
 
-          <dl className="mt-8 flex flex-wrap gap-x-8 gap-y-4">
-            <Meta icon={UserRound} label="Speaker" value={course.presenter} />
+          <dl className="mt-8 flex flex-wrap justify-center gap-x-10 gap-y-4">
+            {course.presenter && (
+              <Meta icon={UserRound} label="Speaker" value={course.presenter} />
+            )}
             {course.cpeCredit && (
               <Meta
                 icon={Award}
@@ -183,12 +178,14 @@ function Meta({
 }) {
   return (
     <div className="flex items-center gap-3">
-      <Icon className="size-5 shrink-0 text-brand-600" aria-hidden />
-      <div>
-        <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-brand-300 ring-1 ring-white/15">
+        <Icon className="size-5" aria-hidden />
+      </span>
+      <div className="text-left">
+        <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
           {label}
         </dt>
-        <dd className="text-[15px] font-semibold text-navy-950">{value}</dd>
+        <dd className="text-[15px] font-semibold text-white">{value}</dd>
       </div>
     </div>
   );

@@ -7,6 +7,8 @@ import { ViewOnlyNotice } from "../view-only";
 import { formatPrice } from "@/lib/utils";
 import { DeleteCourseButton } from "./delete-button";
 import { cloneCourse } from "./actions";
+import { TrendingToggle } from "./trending-toggle";
+import { TRENDING_LIMIT } from "@/lib/trending";
 
 export const metadata = { title: "Courses" };
 
@@ -35,6 +37,8 @@ export default async function AdminCoursesPage() {
     .order("created_at", { ascending: false });
 
   const courses = (data ?? []) as unknown as Row[];
+  const trending = courses.filter((c) => c.is_featured);
+  const hiddenTrending = trending.filter((c) => !c.is_published).length;
 
   return (
     <>
@@ -57,6 +61,21 @@ export default async function AdminCoursesPage() {
         )}
       </div>
 
+      {courses.length > 0 && (
+        <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13.5px] text-amber-900">
+          <span className="font-bold">
+            Trending on homepage: {trending.length} / {TRENDING_LIMIT}
+          </span>
+          <span className="text-amber-800">
+            {trending.length === 0
+              ? "None picked yet, so the homepage shows the newest courses. Click “Add to Trending” on a course to pick it."
+              : "These show in “Trending Courses” just below the banner."}
+            {hiddenTrending > 0 &&
+              ` ${hiddenTrending} of them ${hiddenTrending === 1 ? "is a draft" : "are drafts"} and won’t show until published.`}
+          </span>
+        </div>
+      )}
+
       {error && (
         <p className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-[14px] text-red-800">
           Could not load courses: {error.message}
@@ -74,7 +93,7 @@ export default async function AdminCoursesPage() {
 
       {courses.length > 0 && (
         <div className="mt-8 overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-          <table className="w-full min-w-[820px] text-left">
+          <table className="w-full min-w-[960px] text-left">
             <thead className="border-b border-slate-200 bg-slate-50">
               <tr className="text-[12px] font-bold uppercase tracking-wider text-slate-500">
                 <th className="px-5 py-3">Title</th>
@@ -82,6 +101,7 @@ export default async function AdminCoursesPage() {
                 <th className="px-5 py-3">Price</th>
                 <th className="px-5 py-3">Add-ons</th>
                 <th className="px-5 py-3">Status</th>
+                <th className="px-5 py-3">Homepage</th>
                 <th className="px-5 py-3 text-right">Actions</th>
               </tr>
             </thead>
@@ -121,8 +141,15 @@ export default async function AdminCoursesPage() {
                     <td className="px-5 py-4">
                       <div className="flex flex-wrap gap-1.5">
                         <Badge on={c.is_published} onLabel="Published" offLabel="Draft" />
-                        {c.is_featured && <Badge on onLabel="Featured" offLabel="" />}
                       </div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <TrendingToggle
+                        id={c.id}
+                        title={c.title}
+                        on={c.is_featured}
+                        disabled={!canEdit}
+                      />
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center justify-end gap-2">

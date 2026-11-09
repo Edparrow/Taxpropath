@@ -6,10 +6,12 @@ import {
   Check,
   Mic2,
   Tag,
+  TrendingUp,
   Users,
   X,
 } from "lucide-react";
 import { getFeaturedCourses } from "@/lib/data/catalog";
+import { TRENDING_LIMIT } from "@/lib/trending";
 import {
   getBanners,
   getBrands,
@@ -21,7 +23,7 @@ import { IndustryIcon } from "@/components/industry-icon";
 import { Reveal } from "@/components/reveal";
 import { TypingRevealCards } from "@/components/typing-reveal-cards";
 import { SpeakerCarousel } from "@/components/speaker-carousel";
-import { Badge, PillLink, SectionHeading } from "@/components/ui";
+import { Badge, DarkGlow, PillLink, SectionHeading } from "@/components/ui";
 
 /*
  * Used only when the industries table is empty or unavailable, so the section
@@ -72,7 +74,7 @@ const PLANS = [
 
 export default async function HomePage() {
   const [featured, industryRows, banners, mentors, brands] = await Promise.all([
-    getFeaturedCourses(3),
+    getFeaturedCourses(TRENDING_LIMIT),
     getIndustries(),
     getBanners(),
     getMentors(),
@@ -103,6 +105,38 @@ export default async function HomePage() {
               <PillLink href={hero.cta_href}>{hero.cta_label}</PillLink>
             </div>
           )}
+        </section>
+      )}
+
+      {/* ---------------------------------------------------- trending courses */}
+      {/* Picked in Admin > Courses ("Add to Trending", max 6). With none
+          picked, the newest courses fill the section so it's never empty. */}
+      {featured.length > 0 && (
+        <section className="bg-white">
+          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+            <div className="flex flex-col items-center text-center">
+              <Badge>
+                <TrendingUp className="size-3.5" aria-hidden />
+                Most popular
+              </Badge>
+              <SectionHeading lead="Trending" accent="Courses" className="mt-4" />
+              <p className="mt-3 max-w-xl text-[15.5px] leading-relaxed text-ink-muted">
+                Self-study CPE courses professionals are taking right now.
+              </p>
+            </div>
+
+            <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {featured.map((course) => (
+                <CourseCard key={course.slug} course={course} />
+              ))}
+            </div>
+
+            <div className="mt-10 flex justify-center">
+              <PillLink href="/courses" variant="dark">
+                View All Courses
+              </PillLink>
+            </div>
+          </div>
         </section>
       )}
 
@@ -182,31 +216,6 @@ export default async function HomePage() {
             </ul>
           </div>
         </section>
-      )}
-
-      {/* ----------------------------------------------------- trending grid */}
-      {/* TEMP: disabled per request. Remove the `false &&` below to restore. */}
-      {false && (
-      <section className="bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-end justify-between gap-6">
-            <SectionHeading
-              lead="Unlock premium knowledge"
-              accent="at a fraction of the price"
-              className="max-w-2xl"
-            />
-            <PillLink href="/courses" variant="dark">
-              View All
-            </PillLink>
-          </div>
-
-          <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {featured.map((course) => (
-              <CourseCard key={course.slug} course={course} />
-            ))}
-          </div>
-        </div>
-      </section>
       )}
 
       {/* --------------------------------------------------------- about strip */}
@@ -438,21 +447,40 @@ export default async function HomePage() {
       {/* ----------------------------------------------------------- final CTA */}
       <section className="bg-cream">
         <div className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8">
-          <div className="overflow-hidden rounded-3xl bg-brand-gradient px-8 py-14 text-center sm:px-16">
+          <div className="relative isolate overflow-hidden rounded-[2rem] bg-navy-950 px-6 py-16 text-center ring-1 ring-white/10 sm:px-16 lg:py-20">
+            <DarkGlow />
+            <div aria-hidden className="absolute inset-x-0 top-0 -z-10 h-px bg-gradient-to-r from-transparent via-brand-400/60 to-transparent" />
+
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-[12px] font-bold uppercase tracking-[0.18em] text-brand-300">
+              <span className="size-1.5 rounded-full bg-brand-400" aria-hidden />
+              Start learning today
+            </span>
             <SectionHeading
               lead="Skills for Tomorrow,"
               accent="Starting Today"
-              className="!text-white [&_span]:decoration-white/70"
+              onDark
+              className="mx-auto mt-6 max-w-3xl"
             />
-            <p className="mx-auto mt-5 max-w-xl font-poppins text-[16.5px] leading-relaxed text-white/90">
+            <p className="mx-auto mt-5 max-w-xl text-[16.5px] leading-relaxed text-slate-300">
               Join thousands of CPAs, EAs, and finance professionals earning their
               credits with Taxpropath.
             </p>
-            <div className="mt-9 flex justify-center">
-              <PillLink href="/register" variant="dark">
+            <div className="mt-9 flex flex-wrap justify-center gap-3">
+              <PillLink href="/register" variant="light">
                 Create Your Account
               </PillLink>
+              <PillLink href="/courses" variant="ghost">
+                Browse Courses
+              </PillLink>
             </div>
+            <ul className="mt-10 flex flex-wrap justify-center gap-x-7 gap-y-2 text-[13.5px] text-slate-400">
+              {["IRS-approved CPE", "Learn at your own pace", "Instant certificates"].map((point) => (
+                <li key={point} className="flex items-center gap-2">
+                  <Check className="size-4 text-brand-400" aria-hidden />
+                  {point}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Montserrat, Poppins } from "next/font/google";
+import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -9,17 +9,20 @@ import { ErrorReporter } from "@/components/error-reporter";
 // TEMP: disabled per request. Uncomment to restore the chat widget.
 // import { AIChat } from "@/components/ai-chat";
 
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
+// Typography (same pairing as SkillSync): Poppins for headings, Inter for
+// everything else. The CSS variables are set on <html> so the Tailwind font
+// utilities and the heading rule in globals.css resolve them everywhere.
+const poppins = Poppins({
+  variable: "--font-heading",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
+  weight: ["500", "600", "700", "800"],
   display: "swap",
 });
 
-const poppins = Poppins({
-  variable: "--font-poppins",
+const inter = Inter({
+  variable: "--font-body",
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["300", "400", "500", "600", "700", "800"],
   display: "swap",
 });
 
@@ -64,8 +67,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${montserrat.variable} ${poppins.variable} font-sans antialiased`}>
+    <html lang="en" className={`${poppins.variable} ${inter.variable}`} suppressHydrationWarning>
+      <body className="font-sans antialiased">
         <ErrorReporter />
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <CartProvider>

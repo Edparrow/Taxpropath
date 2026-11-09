@@ -164,7 +164,7 @@ export function CourseForm({
         </div>
         <div className="flex items-center gap-6 pt-6 md:col-span-4">
           <Check name="is_published" label="Published" defaultChecked={initial.isPublished} />
-          <Check name="is_featured" label="Featured" defaultChecked={initial.isFeatured} />
+          <Check name="is_featured" label="Trending (homepage)" defaultChecked={initial.isFeatured} />
         </div>
       </div>
 

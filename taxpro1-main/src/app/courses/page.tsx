@@ -15,14 +15,16 @@ export default async function CoursesPage() {
   return (
     <>
       <PageBanner
-        title="Self-Study Courses"
+        title="Self-Study"
+        accent="Courses"
+        tall
         crumb={[
           { href: "/", label: "Home" },
           { href: "/courses", label: "Courses" },
         ]}
       />
 
-      <section className="bg-white">
+      <section id="page-content" className="scroll-mt-14 bg-white">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           {courses.length === 0 ? (
             <div className="mx-auto max-w-md rounded-3xl border border-slate-200 px-8 py-16 text-center">
