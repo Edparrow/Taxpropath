@@ -161,8 +161,8 @@ export default async function CourseDetailPage({
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <SectionHeading lead="You may also" accent="be interested in" />
             <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {related.map((item, i) => (
-                <CourseCard key={item.slug} course={item} position={i} />
+              {related.map((item) => (
+                <CourseCard key={item.slug} course={item} />
               ))}
             </div>
           </div>

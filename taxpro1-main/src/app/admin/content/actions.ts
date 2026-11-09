@@ -53,7 +53,7 @@ function readFields(resource: Resource, form: FormData) {
   if (row.sort_order === null) row.sort_order = 0;
 
   // Slugs are derived when left blank, so editors never have to think about them.
-  // Most resources name their title field "name"; blog posts call it "title".
+  // Most resources name their title field "name"; some call it "title".
   if (resource.fields.some((f) => f.name === "slug") && !row.slug) {
     const sourceField = resource.fields.find((f) => f.name === "name" || f.name === "title");
     const source = sourceField ? String(row[sourceField.name] ?? "") : "";

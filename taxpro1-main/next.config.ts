@@ -28,6 +28,10 @@ const nextConfig: NextConfig = {
       { source: "/webinar", destination: "/courses", permanent: true },
       { source: "/webinar/:path*", destination: "/courses", permanent: true },
       { source: "/webinars", destination: "/courses", permanent: true },
+      // Blog and Gallery were removed from the site.
+      { source: "/blog", destination: "/", permanent: true },
+      { source: "/blog/:path*", destination: "/", permanent: true },
+      { source: "/gallery", destination: "/", permanent: true },
     ];
   },
 };

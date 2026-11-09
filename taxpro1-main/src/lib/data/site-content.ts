@@ -52,25 +52,6 @@ export type AboutSection = {
   image_url: string | null;
 };
 
-export type BlogPost = {
-  id: string;
-  title: string;
-  slug: string;
-  excerpt: string | null;
-  body: string | null;
-  cover_image_url: string | null;
-  author_name: string | null;
-  seo_title: string | null;
-  seo_description: string | null;
-  published_at: string;
-};
-
-export type GalleryImage = {
-  id: string;
-  title: string | null;
-  image_url: string;
-};
-
 async function published<T>(table: string, columns: string): Promise<T[]> {
   if (!isSupabaseConfigured()) return [];
 
@@ -116,33 +97,3 @@ export function getAboutSections() {
   return published<AboutSection>("about_sections", "id, heading, body, image_url");
 }
 
-export function getBlogPosts() {
-  return published<BlogPost>(
-    "blog_posts",
-    "id, title, slug, excerpt, body, cover_image_url, author_name, seo_title, seo_description, published_at",
-  );
-}
-
-export async function getBlogPost(slug: string): Promise<BlogPost | null> {
-  if (!isSupabaseConfigured()) return null;
-
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("blog_posts")
-    .select(
-      "id, title, slug, excerpt, body, cover_image_url, author_name, seo_title, seo_description, published_at",
-    )
-    .eq("slug", slug)
-    .eq("is_published", true)
-    .maybeSingle();
-
-  if (error) {
-    reportDbError("Loading a blog post", error);
-    return null;
-  }
-  return (data as unknown as BlogPost) ?? null;
-}
-
-export function getGalleryImages() {
-  return published<GalleryImage>("gallery_images", "id, title, image_url");
-}

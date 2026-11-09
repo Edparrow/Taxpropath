@@ -5,14 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BadgeDollarSign,
-  BookOpen,
   Building2,
   ClipboardList,
   FolderTree,
   GraduationCap,
   History,
   Image as ImageIcon,
-  Images,
   Info,
   LayoutDashboard,
   Layers,
@@ -54,8 +52,6 @@ const NAV_GROUPS: { title: string; links: NavLink[] }[] = [
       { href: "/admin/content/subcategories", label: "SubCategory", icon: Layers, section: "subcategories" },
       { href: "/admin/content/industries", label: "Industries", icon: Building2, section: "industries" },
       { href: "/admin/content/brands", label: "Brands", icon: Tags, section: "brands" },
-      { href: "/admin/content/blog", label: "Blog", icon: BookOpen, section: "blog" },
-      { href: "/admin/content/gallery", label: "Gallery", icon: Images, section: "gallery" },
       { href: "/admin/content/about", label: "About", icon: Info, section: "about" },
       { href: "/admin/content/testimonials", label: "Testimonial", icon: MessageSquareQuote, section: "testimonials" },
     ],

@@ -203,41 +203,6 @@ export const RESOURCES: Resource[] = [
       { name: "image_url", label: "Image URL", type: "url" },
     ],
   }),
-  resource({
-    slug: "blog",
-    table: "blog_posts",
-    label: "Blog post",
-    plural: "Blog",
-    description: "Articles shown on the /blog page.",
-    listColumns: ["title", "author_name"],
-    fields: [
-      { name: "title", label: "Title", type: "text", required: true },
-      {
-        name: "slug",
-        label: "Slug",
-        type: "text",
-        hint: "Leave blank to generate from the title.",
-      },
-      { name: "excerpt", label: "Excerpt", type: "textarea", hint: "Short teaser for list views." },
-      { name: "body", label: "Body", type: "textarea", required: true },
-      { name: "cover_image_url", label: "Cover image URL", type: "url" },
-      { name: "author_name", label: "Author", type: "text" },
-      { name: "seo_title", label: "SEO title", type: "text" },
-      { name: "seo_description", label: "SEO description", type: "textarea" },
-    ],
-  }),
-  resource({
-    slug: "gallery",
-    table: "gallery_images",
-    label: "Gallery image",
-    plural: "Gallery",
-    description: "Photos shown in the site gallery.",
-    listColumns: ["title", "image_url"],
-    fields: [
-      { name: "title", label: "Caption", type: "text" },
-      { name: "image_url", label: "Image URL", type: "url", required: true },
-    ],
-  }),
 ];
 
 export function findResource(slug: string): Resource | undefined {

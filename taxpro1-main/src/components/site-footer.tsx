@@ -13,8 +13,6 @@ const INDUSTRIES = [
 
 const USEFUL_LINKS = [
   { href: "/courses", label: "Self-Study Courses" },
-  { href: "/blog", label: "Blog" },
-  { href: "/gallery", label: "Gallery" },
   { href: "/privacy-policy", label: "Privacy Policy" },
   { href: "/refund-policy", label: "Refund Policy" },
   { href: "/contact", label: "Contact Us" },
@@ -25,50 +23,48 @@ export function SiteFooter() {
     <footer className="relative overflow-hidden bg-navy-950 text-slate-400">
       <div
         aria-hidden
-        className="pointer-events-none absolute -right-24 -top-24 size-96 rounded-full bg-brand-600/[0.07] blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-24 -left-24 size-96 rounded-full bg-navy-500/[0.07] blur-3xl"
+        className="pointer-events-none absolute -right-24 -top-24 size-80 rounded-full bg-brand-600/[0.07] blur-3xl"
       />
 
-      <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-4 lg:px-8">
-        <div className="lg:col-span-1">
-          <Link href="/" className="inline-block rounded-xl bg-white/90 px-4 py-3">
+      <div className="relative mx-auto grid max-w-7xl grid-cols-2 gap-x-8 gap-y-8 px-4 py-10 sm:px-6 lg:grid-cols-12 lg:py-12 lg:px-8">
+        <div className="col-span-2 lg:col-span-4">
+          <Link href="/" className="inline-block rounded-lg bg-white/90 px-3 py-2">
             <Image
               src="/logo.png"
               alt="Taxpropath"
               width={1024}
               height={318}
-              className="h-10 w-auto"
+              className="h-8 w-auto"
             />
           </Link>
-          <p className="mt-6 max-w-xs text-[15.5px] leading-relaxed">
+          <p className="mt-4 max-w-xs text-sm leading-relaxed">
             For almost a decade, we&rsquo;ve been providing high-quality online courses
             led by expert instructors with deep industry experience.
           </p>
-          <NewsletterForm />
+          <div className="max-w-xs">
+            <NewsletterForm />
+          </div>
         </div>
 
-        <div>
+        <div className="lg:col-span-2">
           <FooterHeading>Industries</FooterHeading>
-          <ul className="space-y-4">
+          <ul className="space-y-2.5">
             {INDUSTRIES.map((industry) => (
-              <li key={industry} className="text-[15.5px]">
+              <li key={industry} className="text-sm">
                 {industry}
               </li>
             ))}
           </ul>
         </div>
 
-        <div>
+        <div className="lg:col-span-2">
           <FooterHeading>Useful Links</FooterHeading>
-          <ul className="space-y-4">
+          <ul className="space-y-2.5">
             {USEFUL_LINKS.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className="inline-block text-[15.5px] font-medium transition-all duration-300 hover:translate-x-2 hover:text-white"
+                  className="block w-fit text-sm font-medium transition-all duration-300 hover:translate-x-1 hover:text-white"
                 >
                   {link.label}
                 </Link>
@@ -77,15 +73,15 @@ export function SiteFooter() {
           </ul>
         </div>
 
-        <div>
+        <div className="col-span-2 lg:col-span-4">
           <FooterHeading>Contact Us</FooterHeading>
-          <ul className="space-y-5">
-            <li className="flex items-start gap-4 text-[15px] leading-relaxed">
-              <MapPin className="mt-1 size-[18px] shrink-0 text-brand-600" aria-hidden />
+          <ul className="space-y-3">
+            <li className="flex items-start gap-3 text-sm leading-relaxed">
+              <MapPin className="mt-0.5 size-4 shrink-0 text-brand-600" aria-hidden />
               2117 Pennsylvania Avenue NW, Washington, DC 20037, USA
             </li>
-            <li className="flex items-start gap-4 text-[15px]">
-              <Mail className="mt-1 size-[18px] shrink-0 text-brand-600" aria-hidden />
+            <li className="flex items-start gap-3 text-sm">
+              <Mail className="mt-0.5 size-4 shrink-0 text-brand-600" aria-hidden />
               <a
                 href="mailto:support@taxpropath.com"
                 className="transition-colors duration-200 hover:text-white"
@@ -97,8 +93,8 @@ export function SiteFooter() {
         </div>
       </div>
 
-      <div className="relative border-t border-white/[0.03] bg-[#02040a] py-6">
-        <p className="mx-auto max-w-7xl px-4 text-center text-[14.5px] tracking-wide text-slate-500 sm:px-6 lg:px-8">
+      <div className="relative border-t border-white/[0.05] bg-[#02040a]">
+        <p className="mx-auto max-w-7xl px-4 py-4 text-center text-[13px] text-slate-500 sm:px-6 lg:px-8">
           Copyright &copy; 2026 Taxpropath. All Rights Reserved
         </p>
       </div>
@@ -110,7 +106,7 @@ export function SiteFooter() {
 
 function FooterHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h4 className="relative mb-6 pb-3 text-[1.35rem] font-extrabold tracking-wide text-white after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-10 after:rounded-full after:bg-brand-gradient after:content-['']">
+    <h4 className="relative mb-4 pb-2 text-[13px] font-bold uppercase tracking-[0.14em] text-white after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-8 after:rounded-full after:bg-brand-gradient after:content-['']">
       {children}
     </h4>
   );

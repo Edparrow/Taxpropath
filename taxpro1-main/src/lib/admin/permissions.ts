@@ -18,8 +18,6 @@ export const ADMIN_SECTIONS = [
   { key: "subcategories", label: "SubCategory", group: "Content" },
   { key: "industries", label: "Industries", group: "Content" },
   { key: "brands", label: "Brands", group: "Content" },
-  { key: "blog", label: "Blog", group: "Content" },
-  { key: "gallery", label: "Gallery", group: "Content" },
   { key: "about", label: "About", group: "Content" },
   { key: "testimonials", label: "Testimonial", group: "Content" },
   { key: "orders", label: "Completed Orders", group: "Orders" },
