@@ -14,7 +14,7 @@ import {
   getBanners,
   getBrands,
   getIndustries,
-  getTestimonials,
+  getMentors,
 } from "@/lib/data/site-content";
 import { CourseCard } from "@/components/course-card";
 import { IndustryIcon } from "@/components/industry-icon";
@@ -71,11 +71,11 @@ const PLANS = [
 ];
 
 export default async function HomePage() {
-  const [featured, industryRows, banners, testimonials, brands] = await Promise.all([
+  const [featured, industryRows, banners, mentors, brands] = await Promise.all([
     getFeaturedCourses(3),
     getIndustries(),
     getBanners(),
-    getTestimonials(),
+    getMentors(),
     getBrands(),
   ]);
 
@@ -364,109 +364,33 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* --------------------------------------------------------- speakers */}
-      <section className="bg-cream">
-        <div className="mx-auto max-w-7xl px-4 pb-20 pt-8 sm:px-6 lg:px-8">
-          <div className="flex justify-center">
-            <Badge>
-              <Mic2 className="size-3.5" aria-hidden />
-              Our Speakers
-            </Badge>
-          </div>
-
-          <div className="mt-12">
-            <SpeakerCarousel
-              speakers={[
-                {
-                  name: "Michael Turner",
-                  title: "Senior Tax Advisor, CPA",
-                  bio: "20+ years advising Fortune 500 companies on federal tax strategy.",
-                },
-                {
-                  name: "Sarah Chen",
-                  title: "Compliance & Audit Specialist",
-                  bio: "Former Big 4 auditor specializing in CPE-accredited compliance training.",
-                },
-                {
-                  name: "James Okafor",
-                  title: "HR & Payroll Consultant",
-                  bio: "Helps finance teams navigate payroll tax law changes nationwide.",
-                },
-                {
-                  name: "Elena Marquez",
-                  title: "QuickBooks & Xero Advisor",
-                  bio: "Trains bookkeeping teams on cloud-accounting best practices.",
-                },
-                {
-                  name: "David Whitfield",
-                  title: "Enrolled Agent, IRS Rep.",
-                  bio: "Represents clients before the IRS and teaches audit-defense courses.",
-                },
-              ]}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ------------------------------------------------------- testimonials */}
-      {testimonials.length > 0 && (
+      {/* ---------------------------------------------------------- mentors */}
+      {/* Speakers from Admin > Speakers; hidden until at least one is published. */}
+      {mentors.length > 0 && (
         <section className="bg-cream">
-          <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-            <SectionHeading
-              lead="Trusted by professionals"
-              accent="who keep coming back"
-              className="max-w-2xl"
-            />
-            <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {testimonials.map((testimonial) => (
-                <li
-                  key={testimonial.id}
-                  className="flex flex-col rounded-2xl border border-navy-950/[0.07] bg-white p-6"
-                >
-                  {testimonial.rating !== null && (
-                    <p
-                      className="text-[15px] tracking-widest text-brand-600"
-                      aria-label={`${testimonial.rating} out of 5`}
-                    >
-                      {"★".repeat(Math.max(0, Math.min(5, testimonial.rating)))}
-                    </p>
-                  )}
-                  <blockquote className="mt-3 flex-1 text-[15px] leading-relaxed text-ink-muted">
-                    &ldquo;{testimonial.quote}&rdquo;
-                  </blockquote>
-                  <div className="mt-5 flex items-center gap-3 border-t border-slate-100 pt-4">
-                    {testimonial.avatar_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={testimonial.avatar_url}
-                        alt=""
-                        className="size-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <span
-                        aria-hidden
-                        className="flex size-10 items-center justify-center rounded-full bg-brand-gradient text-[13px] font-bold text-white"
-                      >
-                        {testimonial.author_name.slice(0, 1).toUpperCase()}
-                      </span>
-                    )}
-                    <div>
-                      <p className="text-[14px] font-bold text-navy-950">
-                        {testimonial.author_name}
-                      </p>
-                      {testimonial.author_role && (
-                        <p className="text-[12.5px] text-ink-muted">
-                          {testimonial.author_role}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
+          <div className="mx-auto max-w-7xl px-4 pb-20 pt-8 sm:px-6 lg:px-8">
+            <div className="flex justify-center">
+              <Badge>
+                <Mic2 className="size-3.5" aria-hidden />
+                Our Mentors
+              </Badge>
+            </div>
+
+            <div className="mt-12">
+              <SpeakerCarousel
+                speakers={mentors.map((m) => ({
+                  name: m.name,
+                  title: m.title,
+                  bio: m.bio,
+                  avatarUrl: m.avatar_url,
+                  courses: (m.courses ?? []).map((c) => c.title),
+                }))}
+              />
+            </div>
           </div>
         </section>
       )}
+
 
       {/* ------------------------------------------------------------- brands */}
       {brands.length > 0 && (

@@ -1,7 +1,7 @@
 /**
  * Declarative definitions for the admin's content sections.
  *
- * The seven content tables from 0001_initial_schema.sql are structurally the same
+ * The content tables from 0001_initial_schema.sql are structurally the same
  * (sort_order / is_published / created_at + a handful of scalar fields), so one
  * generic list + form + action set drives all of them from this config. Adding a
  * section means adding an entry here and a table in a migration — no new pages.
@@ -176,18 +176,35 @@ export const RESOURCES: Resource[] = [
     ],
   }),
   resource({
-    slug: "testimonials",
-    table: "testimonials",
-    label: "Testimonial",
-    plural: "Testimonials",
-    description: "Quotes from attendees.",
-    listColumns: ["author_name", "author_role"],
+    slug: "speakers",
+    table: "presenters",
+    label: "Speaker",
+    plural: "Speakers",
+    description:
+      "Course speakers. Published speakers appear in \"Our Mentors\" on the homepage.",
+    listColumns: ["name", "title"],
     fields: [
-      { name: "author_name", label: "Author", type: "text", required: true },
-      { name: "author_role", label: "Role / company", type: "text" },
-      { name: "quote", label: "Quote", type: "textarea", required: true },
-      { name: "avatar_url", label: "Avatar URL", type: "url" },
-      { name: "rating", label: "Rating", type: "number", hint: "1 to 5." },
+      { name: "name", label: "Name", type: "text", required: true },
+      {
+        name: "slug",
+        label: "Slug",
+        type: "text",
+        hint: "Leave blank to generate from the name.",
+      },
+      {
+        name: "title",
+        label: "Title / credentials",
+        type: "text",
+        hint: "For example: CPA, Tax Attorney.",
+      },
+      { name: "bio", label: "Bio", type: "textarea" },
+      {
+        name: "avatar_url",
+        label: "Photo",
+        type: "url",
+        upload: true,
+        hint: "Upload a square WebP or PNG (max 5 MB), or paste a link.",
+      },
     ],
   }),
   resource({

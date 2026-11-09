@@ -29,13 +29,14 @@ export type Industry = {
   description: string | null;
 };
 
-export type Testimonial = {
+export type Mentor = {
   id: string;
-  author_name: string;
-  author_role: string | null;
-  quote: string;
+  name: string;
+  title: string | null;
+  bio: string | null;
   avatar_url: string | null;
-  rating: number | null;
+  /** Published courses this speaker presents (RLS hides the rest). */
+  courses: { title: string }[];
 };
 
 export type Brand = {
@@ -82,11 +83,9 @@ export function getIndustries() {
   return published<Industry>("industries", "id, name, icon, description");
 }
 
-export function getTestimonials() {
-  return published<Testimonial>(
-    "testimonials",
-    "id, author_name, author_role, quote, avatar_url, rating",
-  );
+/** Published speakers for "Our Mentors" on the homepage (Admin > Speakers). */
+export function getMentors() {
+  return published<Mentor>("presenters", "id, name, title, bio, avatar_url, courses(title)");
 }
 
 export function getBrands() {
