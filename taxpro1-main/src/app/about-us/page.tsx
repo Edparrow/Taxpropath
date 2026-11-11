@@ -20,7 +20,7 @@ const OFFERINGS = [
   {
     icon: CalendarCheck,
     title: "Flexible Access",
-    body: "Earn credits anytime via our mobile app and seamlessly integrated web platform.",
+    body: "Earn credits anytime, on any device — desktop, tablet or phone — through our web learning portal.",
   },
   {
     icon: BadgeCheck,
