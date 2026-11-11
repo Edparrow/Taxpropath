@@ -259,7 +259,7 @@ export default async function HomePage() {
             items={[
               {
                 title: "Flexible Access",
-                body: "Earn credits anytime via our mobile app and seamlessly integrated web platform.",
+                body: "Earn credits anytime, on any device — desktop, tablet or phone — through our web learning portal.",
               },
               {
                 title: "Easy Credit Tracking",
