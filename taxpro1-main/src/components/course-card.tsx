@@ -7,7 +7,7 @@ import { formatPrice } from "@/lib/utils";
 
 /**
  * Self-study course card, kept deliberately quiet: a clean cover (topic
- * colour + one icon, or the speaker's photo), the title, the speaker, and the
+ * colour + one icon; never the speaker's photo), the title, the speaker, and the
  * price with Add to Cart and Buy Now (both open the add-on pop-up).
  */
 export function CourseCard({ course }: { course: Course }) {
@@ -23,29 +23,15 @@ export function CourseCard({ course }: { course: Course }) {
     <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-navy-950/[0.07]">
       {/* ------------------------------------------------------- cover */}
       <div
-        className={`relative isolate flex h-44 items-center justify-center overflow-hidden ${
-          course.presenterAvatar ? "bg-slate-100" : topic.cover
-        }`}
+        className={`relative isolate flex h-44 items-center justify-center overflow-hidden ${topic.cover}`}
       >
-        {course.presenterAvatar ? (
-          // Admin-uploaded URLs can be any host, so a plain <img>.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={course.presenterAvatar}
-            alt=""
-            className="absolute inset-0 -z-10 size-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <>
-            <span
-              aria-hidden
-              className="absolute -right-10 -top-16 -z-10 size-48 rounded-full bg-white/10 blur-2xl"
-            />
-            <span className="flex size-16 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-white/20 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
-              <Icon className="size-8" strokeWidth={1.5} aria-hidden />
-            </span>
-          </>
-        )}
+        <span
+          aria-hidden
+          className="absolute -right-10 -top-16 -z-10 size-48 rounded-full bg-white/10 blur-2xl"
+        />
+        <span className="flex size-16 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-white/20 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
+          <Icon className="size-8" strokeWidth={1.5} aria-hidden />
+        </span>
 
         {credit && (
           <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[11.5px] font-semibold text-navy-950 shadow-sm">
