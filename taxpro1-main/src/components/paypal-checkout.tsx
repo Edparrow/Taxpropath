@@ -74,7 +74,7 @@ export function PaypalCheckout({
   couponCode?: string;
   /** Returns the billing form values, or null if the form is invalid. */
   getBilling: () => Record<string, string> | null;
-  onPaid: (result: { orderId: string; captureId: string | null }) => void;
+  onPaid: (result: { orderId: string; captureId: string | null; amountCents?: number }) => void;
 }) {
   const buttonsRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
@@ -122,7 +122,11 @@ export function PaypalCheckout({
         });
         const body = await res.json();
         if (!res.ok) throw new Error(body.error ?? "Payment could not be completed.");
-        latest.current.onPaid({ orderId: body.orderId, captureId: body.captureId });
+        latest.current.onPaid({
+          orderId: body.orderId,
+          captureId: body.captureId,
+          amountCents: body.amountCents,
+        });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Payment failed.");
       } finally {

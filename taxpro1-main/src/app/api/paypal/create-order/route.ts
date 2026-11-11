@@ -77,25 +77,36 @@ export async function POST(request: Request) {
     // amount later, and so an abandoned payment leaves an auditable trail.
     const admin = createAdminClient();
 
-    // A buyer whose login came from the other site sharing this auth database
-    // has no TaxProPath profile yet; buying here makes them a customer.
-    await admin.from("profiles").upsert(
+    // Save the checkout details back to the profile so the next checkout (and
+    // My Account) shows them. Only filled-in fields are written: a blank field
+    // never wipes something already saved. A buyer whose login came from the
+    // other site sharing this auth database gets their profile created here.
+    const profileFields = [
+      "first_name",
+      "last_name",
+      "phone",
+      "company",
+      "address1",
+      "address2",
+      "city",
+      "zip",
+      "ptin",
+      "country",
+      "region",
+    ] as const;
+    const { error: profileError } = await admin.from("profiles").upsert(
       {
         id: user.id,
-        first_name: billing.first_name || null,
-        last_name: billing.last_name || null,
-        phone: billing.phone || null,
-        company: billing.company || null,
-        address1: billing.address1 || null,
-        address2: billing.address2 || null,
-        city: billing.city || null,
-        zip: billing.zip || null,
-        ptin: billing.ptin || null,
-        country: billing.country || null,
-        region: billing.region || null,
+        ...Object.fromEntries(
+          profileFields.filter((key) => billing[key]).map((key) => [key, billing[key]]),
+        ),
       },
-      { onConflict: "id", ignoreDuplicates: true },
+      { onConflict: "id" },
     );
+    if (profileError) {
+      // Never block a payment over this; the order keeps its own billing copy.
+      console.error("[paypal/create-order] profile save failed", profileError);
+    }
     const { error } = await admin.rpc("place_order", {
       p_user_id: user.id,
       // Ownership comes from the session; the form's email is billing detail only.
