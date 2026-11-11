@@ -144,6 +144,44 @@ body {
   animation: fade-in 0.6s ease-out;
 }
 
+/* -------------------------------------------------- payment receipt */
+/* The receipt feeds out of the printer in short pushes, like a till roll. */
+@keyframes receipt-print {
+  0% { transform: translateY(-100%); }
+  14% { transform: translateY(-84%); }
+  20% { transform: translateY(-82%); }
+  36% { transform: translateY(-60%); }
+  42% { transform: translateY(-58%); }
+  58% { transform: translateY(-36%); }
+  64% { transform: translateY(-34%); }
+  82% { transform: translateY(-10%); }
+  88% { transform: translateY(-8%); }
+  100% { transform: translateY(0); }
+}
+.animate-receipt-print {
+  animation: receipt-print 2.8s ease-out 0.4s both;
+}
+@keyframes printer-hum {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(0.6px); }
+}
+.animate-printer-hum {
+  animation: printer-hum 0.12s linear infinite;
+}
+/* Thank-you tick drawing itself in. */
+@keyframes check-draw {
+  from { stroke-dashoffset: 24; }
+  to { stroke-dashoffset: 0; }
+}
+.animate-check-draw {
+  stroke-dasharray: 24;
+  animation: check-draw 0.6s ease-out 0.3s both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-printer-hum { animation: none; }
+  .animate-check-draw { animation: none; }
+}
+
 /* ---------------------------------------------------- auth split screen */
 /* Login / Register left panel: drifting colour blobs, floating cards and a
    title whose letters rise in one by one. */
