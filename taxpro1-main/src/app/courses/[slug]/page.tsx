@@ -93,7 +93,7 @@ export default async function CourseDetailPage({
             )}
             {course.whoShouldAttend.length > 0 && (
               <BulletSection
-                title="Who Should Attend"
+                title="Who This Course Is For"
                 items={course.whoShouldAttend}
               />
             )}

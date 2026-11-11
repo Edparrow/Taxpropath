@@ -181,7 +181,7 @@ export function CourseForm({
             rows={5}
           />
         </Field>
-        <Field label="Who Should Attend" hint="One per line.">
+        <Field label="Who This Course Is For" hint="One per line.">
           <textarea
             name="who_should_attend"
             defaultValue={initial.whoShouldAttend}
