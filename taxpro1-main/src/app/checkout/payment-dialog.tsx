@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { Lock, X } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
@@ -14,7 +14,13 @@ import { formatPrice } from "@/lib/utils";
  * PayPal's inline card form (which draws parts of itself on the page) then
  * renders greyed out and ignores clicks. The payment buttons mount only while
  * it's open, because PayPal must measure a visible container to draw them.
+ *
+ * It's mounted as soon as the checkout loads, just invisible (laid out, so
+ * PayPal can measure it, but transparent, unclickable and out of the tab
+ * order). PayPal's script, buttons and card fields load in the background
+ * while the buyer checks their details, so "Pay" opens it instantly.
  */
+const noop = () => () => {};
 export function PaymentDialog({
   open,
   onClose,
@@ -47,12 +53,20 @@ export function PaymentDialog({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  // Portals need the browser's <body>; nothing to show during server render.
+  const isClient = useSyncExternalStore(noop, () => true, () => false);
+  if (!isClient) return null;
 
   // Portalled to <body>: the order summary is position:sticky, which would
   // otherwise trap this overlay under the site header and the chat bot.
   return createPortal(
-    <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-3">
+    <div
+      aria-hidden={!open}
+      inert={!open}
+      className={`fixed inset-0 z-[2147483647] flex items-center justify-center p-3 transition-opacity duration-200 ${
+        open ? "opacity-100" : "pointer-events-none opacity-0"
+      }`}
+    >
       <button
         type="button"
         aria-label="Close payment"
