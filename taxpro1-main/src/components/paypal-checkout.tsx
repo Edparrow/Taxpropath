@@ -99,6 +99,9 @@ export function PaypalCheckout({
   // (so closing the page mid-payment can be reported).
   const methodRef = useRef<string | null>(null);
   const pendingRef = useRef<string | null>(null);
+  // Set once the payment is captured: the checkout then unmounts, and PayPal's
+  // card submit may reject on the way out. That is not a failure.
+  const paidRef = useRef(false);
 
   useEffect(() => {
     function onPageHide() {
@@ -154,6 +157,7 @@ export function PaypalCheckout({
         pendingRef.current = null; // the server records success or the decline reason
         const body = await res.json();
         if (!res.ok) throw new Error(body.error ?? "Payment could not be completed.");
+        paidRef.current = true;
         latest.current.onPaid({
           orderId: body.orderId,
           captureId: body.captureId,
@@ -230,7 +234,11 @@ export function PaypalCheckout({
         }
         if (!cancelled) setReady(true);
 
-        const cardFields = window.paypal.CardFields({ createOrder, onApprove });
+        const cardFields = window.paypal.CardFields({
+          createOrder,
+          onApprove,
+          style: CARD_FIELD_STYLE,
+        });
         if (!cardFields.isEligible()) {
           if (!cancelled) setCardStatus("ineligible");
           return;
@@ -276,6 +284,7 @@ export function PaypalCheckout({
     try {
       await cardFieldsRef.current.submit();
     } catch (err) {
+      if (paidRef.current) return; // paid; the card window just closed afterwards
       console.error("[paypal] card submit failed", err);
       trackCheckout("card_failed", {
         method: "card",
@@ -363,16 +372,42 @@ export function PaypalCheckout({
 }
 
 /** PayPal renders its own iframe inside these containers. */
+/*
+ * PayPal draws each card field as its own input inside an iframe, so the
+ * input itself is styled here to match the site's form controls (our wrapper
+ * stays borderless; a border on both would show two boxes).
+ */
+const CARD_FIELD_STYLE = {
+  input: {
+    "font-size": "15px",
+    "font-family": "Inter, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif",
+    color: "#020617",
+    padding: "12px 16px",
+    border: "1px solid #cbd5e1",
+    "border-radius": "12px",
+    "box-shadow": "none",
+    outline: "none",
+    background: "#ffffff",
+    transition: "border-color 0.2s, box-shadow 0.2s",
+  },
+  ":focus": {
+    border: "1px solid #22c55e",
+    "box-shadow": "0 0 0 3px rgba(34, 197, 94, 0.25)",
+  },
+  ".invalid": {
+    color: "#b91c1c",
+    border: "1px solid #ef4444",
+  },
+};
+
 function PaypalField({ label, id }: { label: string; id: string }) {
   return (
     <div>
-      <label htmlFor={id} className="mb-1.5 block text-[13px] font-bold text-navy-950">
+      <label htmlFor={id} className="mb-1 block text-[13px] font-bold text-navy-950">
         {label}
       </label>
-      <div
-        id={id}
-        className="h-[46px] rounded-xl border border-slate-300 px-2 transition-colors duration-200 focus-within:border-brand-500"
-      />
+      {/* PayPal's iframe pads its input a little; pull it flush with the label. */}
+      <div id={id} className="-mx-1.5" />
     </div>
   );
 }
