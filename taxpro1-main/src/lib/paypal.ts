@@ -160,6 +160,8 @@ export type CaptureResult = {
   status: string;
   capturedCents: number;
   currency: string;
+  /** Bank / card network response on a card capture, e.g. "0051". */
+  processorCode: string | null;
 };
 
 /** Captures an approved PayPal order and normalises the amount to cents. */
@@ -181,6 +183,7 @@ export async function capturePaypalOrder(
     status: capture?.status ?? body.status,
     capturedCents: Math.round(Number(amount.value ?? 0) * 100),
     currency: amount.currency_code ?? "USD",
+    processorCode: capture?.processor_response?.response_code ?? null,
   };
 }
 

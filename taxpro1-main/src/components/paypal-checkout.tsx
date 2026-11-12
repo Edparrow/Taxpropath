@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { CreditCard, Loader2 } from "lucide-react";
 import type { CartLine } from "@/lib/types";
 import { FormAlert } from "@/components/form";
+import { checkoutSession, trackCheckout } from "@/lib/checkout-track";
 
 // Minimal shape of the bits of the PayPal JS SDK this component touches.
 type PaypalNamespace = {
@@ -27,6 +28,9 @@ declare global {
 }
 
 let sdkPromise: Promise<void> | null = null;
+
+/** An error our server already recorded in checkout tracking. */
+class RecordedError extends Error {}
 
 function loadPaypalSdk(clientId: string) {
   if (sdkPromise) return sdkPromise;
@@ -91,6 +95,26 @@ export function PaypalCheckout({
 
   const cardFieldsRef = useRef<ReturnType<PaypalNamespace["CardFields"]> | null>(null);
 
+  // Tracking: which button was used, and the PayPal order still being paid
+  // (so closing the page mid-payment can be reported).
+  const methodRef = useRef<string | null>(null);
+  const pendingRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    function onPageHide() {
+      if (!pendingRef.current) return;
+      trackCheckout("left_page", {
+        method: methodRef.current,
+        paypalOrderId: pendingRef.current,
+        reason: "Left the checkout page in the middle of paying (closed the tab or went to another page)",
+        code: "LEFT_PAGE",
+      });
+      pendingRef.current = null;
+    }
+    window.addEventListener("pagehide", onPageHide);
+    return () => window.removeEventListener("pagehide", onPageHide);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -105,10 +129,13 @@ export function PaypalCheckout({
           billing,
           lines: latest.current.lines,
           couponCode: latest.current.couponCode || undefined,
+          session: checkoutSession(),
+          method: methodRef.current,
         }),
       });
       const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? "Could not start payment.");
+      if (!res.ok) throw new RecordedError(body.error ?? "Could not start payment.");
+      pendingRef.current = body.id as string;
       return body.id as string;
     }
 
@@ -118,8 +145,13 @@ export function PaypalCheckout({
         const res = await fetch("/api/paypal/capture-order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ paypalOrderId: data.orderID }),
+          body: JSON.stringify({
+            paypalOrderId: data.orderID,
+            session: checkoutSession(),
+            method: methodRef.current,
+          }),
         });
+        pendingRef.current = null; // the server records success or the decline reason
         const body = await res.json();
         if (!res.ok) throw new Error(body.error ?? "Payment could not be completed.");
         latest.current.onPaid({
@@ -147,7 +179,9 @@ export function PaypalCheckout({
               style: { shape: "pill", height: 48, layout: "vertical" },
               // Validate before PayPal opens its window. Without this the flow
               // aborts inside createOrder and the buyer just sees nothing happen.
-              onClick: (_data: unknown, actions: PaypalClickActions) => {
+              onClick: (data: { fundingSource?: string }, actions: PaypalClickActions) => {
+                methodRef.current = data?.fundingSource ?? "paypal";
+                trackCheckout("clicked", { method: methodRef.current });
                 if (latest.current.getBilling()) {
                   setError(null);
                   return actions.resolve();
@@ -159,6 +193,15 @@ export function PaypalCheckout({
               onApprove,
               onError: (err: unknown) => {
                 console.error("[paypal] button error", err);
+                const own = err instanceof Error && err.message === INCOMPLETE_FORM;
+                if (!own && !(err instanceof RecordedError)) {
+                  trackCheckout("paypal_error", {
+                    method: methodRef.current,
+                    paypalOrderId: pendingRef.current,
+                    reason: `PayPal error: ${err instanceof Error ? err.message : String(err)}`.slice(0, 300),
+                    code: "PAYPAL_SDK_ERROR",
+                  });
+                }
                 // Surface the real reason when we raised it ourselves.
                 const message =
                   err instanceof Error && err.message === INCOMPLETE_FORM
@@ -169,11 +212,16 @@ export function PaypalCheckout({
               onCancel: (data: { orderID?: string }) => {
                 setError("Payment cancelled — you have not been charged.");
                 // Lets the server send the "registration incomplete" email.
+                pendingRef.current = null;
                 if (data?.orderID) {
                   void fetch("/api/paypal/cancel-order", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ paypalOrderId: data.orderID }),
+                    body: JSON.stringify({
+                      paypalOrderId: data.orderID,
+                      session: checkoutSession(),
+                      method: methodRef.current,
+                    }),
                   }).catch(() => {});
                 }
               },
@@ -198,6 +246,10 @@ export function PaypalCheckout({
         if (!cancelled) setCardStatus("eligible");
       })
       .catch(() => {
+        trackCheckout("sdk_failed", {
+          reason: "PayPal didn't load in the buyer's browser (ad-blocker, firewall or no internet)",
+          code: "SDK_LOAD_FAILED",
+        });
         if (!cancelled) {
           setError("Couldn't load PayPal. Check your connection.");
           setCardStatus("ineligible");
@@ -219,10 +271,18 @@ export function PaypalCheckout({
     }
     setError(null);
     setBusy(true);
+    methodRef.current = "card";
+    trackCheckout("clicked", { method: "card" });
     try {
       await cardFieldsRef.current.submit();
     } catch (err) {
       console.error("[paypal] card submit failed", err);
+      trackCheckout("card_failed", {
+        method: "card",
+        paypalOrderId: pendingRef.current,
+        reason: `Card not accepted: ${err instanceof Error ? err.message : "unknown error"}`.slice(0, 300),
+        code: "CARD_SUBMIT_FAILED",
+      });
       setError("We couldn't process that card. Check the details and try again.");
       setBusy(false);
     }

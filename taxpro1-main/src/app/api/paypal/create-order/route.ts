@@ -2,7 +2,8 @@ import { NextResponse, after } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient, hasServiceRoleKey } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { createPaypalOrder, isPaypalConfigured } from "@/lib/paypal";
+import { PaypalError, createPaypalOrder, isPaypalConfigured } from "@/lib/paypal";
+import { paypalIssueReason, recordCheckoutEvent } from "@/lib/checkout-events";
 import { priceCart, sanitizeBilling } from "@/lib/cart-pricing";
 import { validateCoupon } from "@/lib/coupons";
 import { syncCheckoutToAbandonedSheet, welcomeNewCustomer } from "@/lib/customer-journey";
@@ -33,8 +34,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
+  // Tracking: the checkout visit this belongs to, and which button was used.
+  const track = {
+    userId: user.id,
+    sessionId: typeof body.session === "string" ? body.session : null,
+    method: typeof body.method === "string" ? body.method : null,
+  };
+  const failed = (reason: string, code: string, details?: Record<string, unknown>) =>
+    after(() => recordCheckoutEvent({ ...track, event: "order_failed", reason, code, details }));
+
   const billing = sanitizeBilling(body.billing);
   if (!billing.email.includes("@")) {
+    failed("No valid email on the billing details", "INVALID_EMAIL");
     return NextResponse.json(
       { error: "A valid email address is required." },
       { status: 400 },
@@ -43,6 +54,7 @@ export async function POST(request: Request) {
 
   const priced = await priceCart(body.lines);
   if (!priced.ok) {
+    failed(`Cart problem: ${priced.error}`, "CART_INVALID");
     return NextResponse.json({ error: priced.error }, { status: 400 });
   }
 
@@ -53,6 +65,7 @@ export async function POST(request: Request) {
   if (body.couponCode) {
     const coupon = await validateCoupon(body.couponCode, priced.totalCents);
     if (!coupon.ok) {
+      failed(`Coupon rejected: ${coupon.error}`, "COUPON_INVALID", { coupon: body.couponCode });
       return NextResponse.json({ error: coupon.error }, { status: 400 });
     }
     discountCents = coupon.discountCents;
@@ -120,6 +133,7 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error("[paypal/create-order] place_order failed", error);
+      failed("Our server couldn't save the order", "ORDER_SAVE_FAILED");
       return NextResponse.json(
         { error: "We couldn't start your payment. Please try again." },
         { status: 500 },
@@ -130,6 +144,13 @@ export async function POST(request: Request) {
     // the checkout goes to the abandoned sheet until it's paid, and a buyer
     // whose welcome hasn't gone out yet gets it now.
     after(async () => {
+      await recordCheckoutEvent({
+        ...track,
+        event: "order_created",
+        paypalOrderId: paypalOrder.id,
+        amountCents: finalTotalCents,
+        details: { items: priced.items.length, coupon: couponCode },
+      });
       await syncCheckoutToAbandonedSheet(paypalOrder.id);
       await welcomeNewCustomer(user.id);
     });
@@ -137,6 +158,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ id: paypalOrder.id });
   } catch (err) {
     console.error("[paypal/create-order] failed", err);
+    const issue = err instanceof PaypalError ? paypalIssueReason(err.body) : null;
+    failed(
+      issue ? `PayPal refused to start the payment: ${issue.reason}` : "Couldn't reach PayPal to start the payment",
+      issue?.code ?? "PAYPAL_UNAVAILABLE",
+    );
     return NextResponse.json(
       { error: "We couldn't start your payment. Please try again." },
       { status: 500 },
