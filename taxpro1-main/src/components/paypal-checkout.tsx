@@ -318,15 +318,13 @@ export function PaypalCheckout({
       {/*
         Kept mounted while eligibility is still unknown so the field containers
         exist when render() runs; hidden with opacity rather than display so
-        PayPal can still measure them. Unmounted once known ineligible.
+        PayPal can still measure them, with a skeleton over the space they will
+        take. Unmounted once known ineligible.
       */}
       {cardStatus !== "ineligible" && (
+        <div className="relative mt-6" aria-busy={cardStatus === "checking"}>
         <div
-          className={
-            cardStatus === "eligible"
-              ? "mt-6"
-              : "pointer-events-none absolute opacity-0"
-          }
+          className={cardStatus === "eligible" ? "" : "pointer-events-none opacity-0"}
           aria-hidden={cardStatus !== "eligible"}
         >
           <div className="flex items-center gap-3 py-2">
@@ -360,6 +358,8 @@ export function PaypalCheckout({
             {busy ? "Processing…" : "Pay with card"}
           </button>
         </div>
+        {cardStatus === "checking" && <CardSkeleton />}
+        </div>
       )}
 
       {busy && (
@@ -367,6 +367,23 @@ export function PaypalCheckout({
           Processing your payment
         </p>
       )}
+    </div>
+  );
+}
+
+/** Placeholder in the card form's shape while PayPal draws the fields. */
+function CardSkeleton() {
+  const bar = "rounded-xl bg-slate-100";
+  return (
+    <div aria-hidden className="absolute inset-0 animate-pulse space-y-4 bg-white">
+      <div className="mx-auto mt-2 h-3 w-32 rounded-full bg-slate-100" />
+      <div className={`h-12 ${bar}`} />
+      <div className={`h-12 ${bar}`} />
+      <div className="grid grid-cols-2 gap-3">
+        <div className={`h-12 ${bar}`} />
+        <div className={`h-12 ${bar}`} />
+      </div>
+      <div className="h-12 rounded-full bg-slate-200" />
     </div>
   );
 }
