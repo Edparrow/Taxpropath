@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient, hasServiceRoleKey } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { sendIncompleteEmail } from "@/lib/customer-journey";
+import { recordCheckoutEvent } from "@/lib/checkout-events";
 
 /**
  * Called when the buyer closes the PayPal window without paying. The order
@@ -33,6 +34,17 @@ export async function POST(request: Request) {
     return new NextResponse(null, { status: 204 });
   }
 
-  after(() => sendIncompleteEmail(order.id));
+  after(async () => {
+    await recordCheckoutEvent({
+      event: "cancelled",
+      userId: user.id,
+      sessionId: typeof body?.session === "string" ? body.session : null,
+      method: typeof body?.method === "string" ? body.method : null,
+      paypalOrderId,
+      reason: "Customer closed the PayPal window without paying",
+      code: "BUYER_CANCELLED",
+    });
+    await sendIncompleteEmail(order.id);
+  });
   return new NextResponse(null, { status: 204 });
 }

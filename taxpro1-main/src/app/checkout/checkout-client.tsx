@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Check, Info, Loader2, Lock, Pencil, Tag, X } from "lucide-react";
@@ -15,6 +15,8 @@ import type { Profile } from "@/lib/account";
 import type { ReceiptData } from "@/lib/receipt";
 import { updateProfile } from "@/app/account/actions";
 import { ThankYou } from "./thank-you";
+import { PaymentDialog } from "./payment-dialog";
+import { newCheckoutSession, trackCheckout } from "@/lib/checkout-track";
 
 export type BillingProfile = Pick<
   Profile,
@@ -72,6 +74,7 @@ export function CheckoutClient({
       ? [savedCountry, ...COUNTRIES]
       : COUNTRIES;
   const [paid, setPaid] = useState<ReceiptData | null>(null);
+  const [paying, setPaying] = useState(false);
 
   const [couponInput, setCouponInput] = useState("");
   const [applying, setApplying] = useState(false);
@@ -81,6 +84,18 @@ export function CheckoutClient({
   );
 
   const totalCents = Math.max(0, subtotalCents - (applied?.discountCents ?? 0));
+
+  // Tracking: one "opened checkout" per visit, once the cart has loaded.
+  const viewed = useRef(false);
+  useEffect(() => {
+    if (viewed.current || lines.length === 0) return;
+    viewed.current = true;
+    newCheckoutSession();
+    trackCheckout("viewed", {
+      amountCents: totalCents,
+      details: { courses: lines.map((l) => l.title).slice(0, 10) },
+    });
+  }, [lines, totalCents]);
 
   async function applyCoupon() {
     const code = couponInput.trim();
@@ -118,6 +133,15 @@ export function CheckoutClient({
     const form = formRef.current;
     if (!form) return null;
     if (!form.checkValidity()) {
+      const missing = Array.from(form.elements)
+        .filter((el): el is HTMLInputElement => "checkValidity" in el && "name" in el)
+        .filter((el) => el.willValidate && !el.checkValidity())
+        .map((el) => el.name);
+      trackCheckout("form_incomplete", {
+        reason: `Billing details incomplete: ${missing.join(", ")}`,
+        code: "FORM_INCOMPLETE",
+        details: { fields: missing },
+      });
       // Hidden fields can't show the browser's hints, so open the form first.
       if (editing) form.reportValidity();
       else setEditing(true);
@@ -154,6 +178,12 @@ export function CheckoutClient({
     formRef.current?.reset();
     setSaveError(null);
     setEditing(false);
+  }
+
+  /** "Pay" opens the payment pop-up, but only once the billing details are complete. */
+  function openPayment() {
+    if (!getBilling()) return;
+    setPaying(true);
   }
 
   function handlePaid(result: {
@@ -199,7 +229,7 @@ export function CheckoutClient({
       />
 
       <section className="bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
           {lines.length === 0 ? (
             <div className="mx-auto max-w-md rounded-3xl border border-slate-200 px-8 py-16 text-center">
               <h2 className="text-xl font-extrabold text-navy-950">
@@ -345,37 +375,40 @@ export function CheckoutClient({
                 </div>
               </form>
 
-              <aside className="h-fit rounded-3xl bg-cream p-7 lg:sticky lg:top-28">
+              <aside className="h-fit rounded-3xl bg-cream p-6 lg:sticky lg:top-24">
                 <h2 className="text-lg font-extrabold text-navy-950">Order Summary</h2>
-                <ul className="mt-6 space-y-4 border-b border-navy-950/10 pb-6">
+                <ul className="mt-4 space-y-3 border-b border-navy-950/10 pb-4">
                   {lines.map((line) => (
                     <li key={line.courseSlug} className="flex justify-between gap-4">
                       <div>
                         <Link
                           href={`/courses/${line.courseSlug}`}
-                          className="text-[14px] font-semibold leading-snug text-navy-950 hover:text-brand-700"
+                          className="line-clamp-2 text-[13.5px] font-semibold leading-snug text-navy-950 hover:text-brand-700"
+                          title={line.title}
                         >
                           {line.title}
                         </Link>
-                        <p className="mt-0.5 text-[12.5px] text-ink-muted">
-                          Self-Study ({formatPrice(line.basePriceCents)})
-                        </p>
+                        {line.addons.length > 0 && (
+                          <p className="mt-0.5 text-[12px] text-ink-muted">
+                            Self-Study ({formatPrice(line.basePriceCents)})
+                          </p>
+                        )}
                         {line.addons.map((addon) => (
                           <p
                             key={addon.code}
-                            className="mt-0.5 pl-3 text-[12.5px] text-ink-muted"
+                            className="mt-0.5 pl-3 text-[12px] text-ink-muted"
                           >
                             + {addon.label} ({formatPrice(addon.priceCents)})
                           </p>
                         ))}
                       </div>
-                      <p className="shrink-0 text-[14px] font-bold tabular-nums text-navy-950">
+                      <p className="shrink-0 text-[13.5px] font-bold tabular-nums text-navy-950">
                         {formatPrice(cartLineTotalCents(line))}
                       </p>
                     </li>
                   ))}
                 </ul>
-                <div className="mt-6">
+                <div className="mt-4">
                   {applied ? (
                     <div className="flex items-center justify-between gap-3 rounded-xl bg-brand-50 px-4 py-2.5">
                       <p className="flex items-center gap-1.5 text-[13px] font-bold text-brand-700">
@@ -398,7 +431,7 @@ export function CheckoutClient({
                           value={couponInput}
                           onChange={(e) => setCouponInput(e.target.value)}
                           placeholder="Coupon code"
-                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-[14px] uppercase text-navy-950 outline-none transition-colors duration-200 focus:border-brand-500"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-[13.5px] uppercase text-navy-950 outline-none transition-colors duration-200 focus:border-brand-500"
                         />
                         <button
                           type="button"
@@ -417,7 +450,7 @@ export function CheckoutClient({
                   )}
                 </div>
 
-                <div className="mt-6 space-y-2 border-t border-navy-950/10 pt-6">
+                <div className="mt-4 space-y-1.5 border-t border-navy-950/10 pt-4">
                   <div className="flex items-baseline justify-between">
                     <p className="text-[14px] text-ink-muted">Subtotal</p>
                     <p className="text-[14px] font-semibold tabular-nums text-navy-950">
@@ -434,21 +467,37 @@ export function CheckoutClient({
                   )}
                   <div className="flex items-baseline justify-between">
                     <p className="text-base font-bold text-navy-950">Total</p>
-                    <p className="text-2xl font-extrabold tabular-nums text-navy-950">
+                    <p className="text-xl font-extrabold tabular-nums text-navy-950">
                       {formatPrice(totalCents)}
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-8">
+                <div className="mt-5">
                   {paypalClientId ? (
-                    <PaypalCheckout
-                      clientId={paypalClientId}
-                      lines={lines}
-                      couponCode={applied?.code}
-                      getBilling={getBilling}
-                      onPaid={handlePaid}
-                    />
+                    <>
+                      <button
+                        type="button"
+                        onClick={openPayment}
+                        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-brand-gradient py-3.5 text-[15px] font-bold text-white shadow-lg shadow-brand-600/25 transition-transform duration-200 hover:-translate-y-0.5"
+                      >
+                        <Lock className="size-4" aria-hidden />
+                        Pay {formatPrice(totalCents)}
+                      </button>
+                      <PaymentDialog
+                        open={paying}
+                        onClose={() => setPaying(false)}
+                        totalCents={totalCents}
+                      >
+                        <PaypalCheckout
+                          clientId={paypalClientId}
+                          lines={lines}
+                          couponCode={applied?.code}
+                          getBilling={getBilling}
+                          onPaid={handlePaid}
+                        />
+                      </PaymentDialog>
+                    </>
                   ) : (
                     <p className="flex items-start gap-3 rounded-xl bg-amber-50 px-4 py-3 text-[13.5px] leading-relaxed text-amber-900">
                       <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
@@ -458,10 +507,6 @@ export function CheckoutClient({
                   )}
                 </div>
 
-                <p className="mt-5 flex items-center justify-center gap-1.5 text-[12.5px] text-slate-500">
-                  <Lock className="size-3.5" aria-hidden />
-                  Payments are processed securely by PayPal
-                </p>
               </aside>
             </div>
           )}

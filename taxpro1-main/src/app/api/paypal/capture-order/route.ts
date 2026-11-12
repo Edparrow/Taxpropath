@@ -2,7 +2,8 @@ import { NextResponse, after } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient, hasServiceRoleKey } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { capturePaypalOrder, isPaypalConfigured } from "@/lib/paypal";
+import { PaypalError, capturePaypalOrder, isPaypalConfigured } from "@/lib/paypal";
+import { paypalIssueReason, processorReason, recordCheckoutEvent } from "@/lib/checkout-events";
 import { fireOrderDoorbell } from "@/lib/engine";
 import { sendOrderConfirmation, syncPaidOrderToSheet } from "@/lib/customer-journey";
 
@@ -30,6 +31,12 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
+  const track = {
+    userId: user.id,
+    sessionId: typeof body?.session === "string" ? body.session : null,
+    method: typeof body?.method === "string" ? body.method : null,
+    paypalOrderId,
+  };
 
   /*
    * Being signed in isn't sufficient: the reference comes from the client, so
@@ -61,6 +68,21 @@ export async function POST(request: Request) {
 
     if (capture.status !== "COMPLETED") {
       console.warn("[paypal/capture-order] non-completed capture", capture);
+      const bank = processorReason(capture.processorCode);
+      after(() =>
+        recordCheckoutEvent({
+          ...track,
+          event: "capture_failed",
+          reason:
+            bank?.reason ??
+            (capture.status === "PENDING"
+              ? "Payment is on hold at PayPal (pending review or eCheck)"
+              : `Payment was ${String(capture.status).toLowerCase()} by PayPal`),
+          code: bank?.code ?? String(capture.status),
+          amountCents: capture.capturedCents,
+          details: { status: capture.status, captureId: capture.captureId },
+        }),
+      );
       return NextResponse.json(
         { error: "Payment was not completed. Please try again." },
         { status: 402 },
@@ -82,6 +104,16 @@ export async function POST(request: Request) {
         capture,
         error,
       });
+      after(() =>
+        recordCheckoutEvent({
+          ...track,
+          event: "capture_failed",
+          reason: "Money was taken at PayPal but didn't match our order. Check it and mark it paid by hand.",
+          code: "AMOUNT_MISMATCH",
+          amountCents: capture.capturedCents,
+          details: { captureId: capture.captureId, currency: capture.currency },
+        }),
+      );
       return NextResponse.json(
         {
           error:
@@ -96,6 +128,14 @@ export async function POST(request: Request) {
     // Hurry-up ping to the course engine (join.us-cpe.com). The hourly get_orders pull is the
     // truth, so a failure here is logged inside and never fails the checkout.
     await fireOrderDoorbell({ order_id: String(orderId), action: "paid" });
+    after(() =>
+      recordCheckoutEvent({
+        ...track,
+        event: "paid",
+        amountCents: capture.capturedCents,
+        details: { captureId: capture.captureId },
+      }),
+    );
 
     // Confirmation email (BCC support) and the order sheet, after the response.
     after(async () => {
@@ -111,6 +151,15 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     console.error("[paypal/capture-order] failed", err);
+    const issue = err instanceof PaypalError ? paypalIssueReason(err.body) : null;
+    after(() =>
+      recordCheckoutEvent({
+        ...track,
+        event: "capture_failed",
+        reason: issue?.reason ?? "Our server couldn't confirm the payment with PayPal",
+        code: issue?.code ?? "CAPTURE_ERROR",
+      }),
+    );
     return NextResponse.json(
       { error: "We couldn't complete your payment. Please try again." },
       { status: 500 },
