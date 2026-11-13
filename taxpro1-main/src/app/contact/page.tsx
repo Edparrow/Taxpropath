@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, MapPin } from "lucide-react";
+import { Mail, MapPin, Phone } from "lucide-react";
+import { COMPANY } from "@/lib/company";
 import {
   Field,
   FormAlert,
@@ -65,9 +66,27 @@ export default function ContactPage() {
                   <h2 className="text-[13px] font-bold uppercase tracking-wider text-slate-500">
                     Address
                   </h2>
-                  <p className="mt-1 text-[15.5px] leading-relaxed text-navy-950">
-                    2117 Pennsylvania Avenue NW, Washington, DC 20037, USA
+                  <p className="mt-1 text-left text-[15.5px] leading-relaxed text-navy-950">
+                    {COMPANY.addressLines[0]}
+                    <br />
+                    {COMPANY.addressLines[1]}
                   </p>
+                </div>
+              </li>
+              <li className="flex gap-5">
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-brand-gradient text-white">
+                  <Phone className="size-5" aria-hidden />
+                </span>
+                <div>
+                  <h2 className="text-[13px] font-bold uppercase tracking-wider text-slate-500">
+                    Phone
+                  </h2>
+                  <a
+                    href={COMPANY.phoneHref}
+                    className="mt-1 block text-[15.5px] font-semibold text-navy-950 transition-colors duration-200 hover:text-brand-700"
+                  >
+                    {COMPANY.phone}
+                  </a>
                 </div>
               </li>
               <li className="flex gap-5">

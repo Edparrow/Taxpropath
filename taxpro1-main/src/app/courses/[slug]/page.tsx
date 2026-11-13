@@ -6,6 +6,7 @@ import { getCourse, getCourses } from "@/lib/data/catalog";
 import { CourseCard } from "@/components/course-card";
 import { BuyBox } from "@/components/buy-box";
 import { DarkBreadcrumb, DarkGlow, SectionHeading } from "@/components/ui";
+import { COURSE_ACCESS } from "@/lib/company";
 
 export async function generateMetadata({
   params,
@@ -114,7 +115,7 @@ export default async function CourseDetailPage({
               ))}
             </dl>
             <p className="mt-4 text-[15px] text-ink-muted">
-              Watch on your schedule in your portal — access never expires.
+              Watch on your schedule in your portal, with access for {COURSE_ACCESS}.
             </p>
 
             {course.faq && course.faq.length > 0 && (
