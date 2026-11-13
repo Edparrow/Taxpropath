@@ -2,7 +2,7 @@ import { NextResponse, after } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient, hasServiceRoleKey } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { PaypalError, createPaypalOrder, isPaypalConfigured } from "@/lib/paypal";
+import { PaypalError, createPaypalOrder, isPaypalConfigured, paypalMode } from "@/lib/paypal";
 import { paypalIssueReason, recordCheckoutEvent } from "@/lib/checkout-events";
 import { priceCart, sanitizeBilling } from "@/lib/cart-pricing";
 import { validateCoupon } from "@/lib/coupons";
@@ -138,6 +138,24 @@ export async function POST(request: Request) {
         { error: "We couldn't start your payment. Please try again." },
         { status: 500 },
       );
+    }
+
+    // Sandbox payments are tests: they must never reach the CRM's live order
+    // feed (they appear only with the test key).
+    if (paypalMode() === "sandbox") {
+      const { error: testError } = await admin
+        .from("orders")
+        .update({ is_test: true })
+        .eq("paypal_order_id", paypalOrder.id);
+      if (testError) {
+        // Safer to stop than to let a sandbox order look real to the CRM.
+        console.error("[paypal/create-order] marking test order failed", testError);
+        failed("Our server couldn't mark the sandbox order as a test", "TEST_FLAG_FAILED");
+        return NextResponse.json(
+          { error: "We couldn't start your payment. Please try again." },
+          { status: 500 },
+        );
+      }
     }
 
     // Journey capture, after the response so the buyer never waits on it:

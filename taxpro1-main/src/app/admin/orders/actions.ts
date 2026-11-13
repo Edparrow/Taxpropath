@@ -427,9 +427,10 @@ export async function updateOrder(
 
 /**
  * Deletes a completed order. It's a soft delete: the row stays for the
- * records but disappears from every list, export, the customer's account and
- * the get_orders API. The admin confirms by typing their own name, as on
- * SkillSync.
+ * records but disappears from every list, export and the customer's account.
+ * If the CRM's get_orders feed has already served it, that feed row stays
+ * unchanged (feed rows never change once sent); tell the CRM separately.
+ * The admin confirms by typing their own name, as on SkillSync.
  */
 export async function deleteOrder(form: FormData): Promise<ActionResult> {
   const admin = await requireAdmin("orders", "edit");
