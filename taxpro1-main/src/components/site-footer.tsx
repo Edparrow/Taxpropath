@@ -1,8 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Mail, MapPin } from "lucide-react";
+import { Mail, Phone, MapPin } from "lucide-react";
 import { NewsletterForm } from "@/components/newsletter-form";
 import { ChatbotWidget } from "@/components/chatbot-widget";
+import { COMPANY } from "@/lib/company";
 
 const INDUSTRIES = [
   "Banking & Taxation",
@@ -15,6 +16,7 @@ const USEFUL_LINKS = [
   { href: "/courses", label: "Self-Study Courses" },
   { href: "/privacy-policy", label: "Privacy Policy" },
   { href: "/refund-policy", label: "Refund Policy" },
+  { href: "/terms-and-conditions", label: "Terms & Conditions" },
   { href: "/contact", label: "Contact Us" },
 ];
 
@@ -78,7 +80,20 @@ export function SiteFooter() {
           <ul className="space-y-3">
             <li className="flex items-start gap-3 text-sm leading-relaxed">
               <MapPin className="mt-0.5 size-4 shrink-0 text-brand-600" aria-hidden />
-              2117 Pennsylvania Avenue NW, Washington, DC 20037, USA
+              <span>
+                {COMPANY.addressLines[0]}
+                <br />
+                {COMPANY.addressLines[1]}
+              </span>
+            </li>
+            <li className="flex items-start gap-3 text-sm">
+              <Phone className="mt-0.5 size-4 shrink-0 text-brand-600" aria-hidden />
+              <a
+                href={COMPANY.phoneHref}
+                className="transition-colors duration-200 hover:text-white"
+              >
+                {COMPANY.phone}
+              </a>
             </li>
             <li className="flex items-start gap-3 text-sm">
               <Mail className="mt-0.5 size-4 shrink-0 text-brand-600" aria-hidden />
