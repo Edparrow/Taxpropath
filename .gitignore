@@ -6,6 +6,8 @@
 *.txt
 # ...except plain-text files the website serves (robots.txt, ads.txt).
 !taxpro1-main/public/*.txt
+# ...and the legal documents the Privacy, Refund and Terms pages are built from.
+!taxpro1-main/documents/*.md
 
 # Research pages saved from other sites
 becker_*
